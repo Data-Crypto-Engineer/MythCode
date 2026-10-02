@@ -1,0 +1,23 @@
+{
+  "kingdom": "Elarion",
+  "current_location": "Whispering Village",
+  "water_supply": "damaged",
+  "forest_spirit_trust": 0,
+  "clockwork_guardian": "inactive",
+  "village_morale": 60,
+  "completed_quests": [],
+  "discovered_locations": [
+    "Whispering Village"
+  ],
+  "available_locations": [
+    "Whispering Village",
+    "Ancient Grove",
+    "River Aqueduct"
+  ],
+  "important_choices": [],
+  "unresolved_conflicts": [
+    "The village water reservoir is bone-dry and crops are withering.",
+    "A dormant clockwork sentinel blocks the ancient conduit.",
+    "Whispers say the forest spirit closed the spring because of strange mechanical noises."
+  ]
+}

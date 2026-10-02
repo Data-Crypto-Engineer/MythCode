@@ -1,0 +1,64 @@
+{
+  "puzzles": [
+    {
+      "id": "puzzle_sequence_guardian",
+      "concept": "sequence",
+      "title": "Awakening the Clockwork Guardian",
+      "description": "The guardian stands motionless before the flooded sluice canal. Its brass gear-wheels need an exact sequence of movement commands to reach the activation crystal.",
+      "grid_size": [3, 3],
+      "start_position": [0, 0],
+      "goal_position": [2, 1],
+      "required_steps": ["FORWARD", "FORWARD", "TURN_RIGHT", "FORWARD"],
+      "hint": "Instruction order matters in the physical world! Step two paces ahead into the hallway, pivot right toward the altar, then take your final stride.",
+      "python_reveal": {
+        "concept_name": "Sequential Execution",
+        "explanation": "In Python, instructions execute one line at a time from top to bottom. Swapping lines changes the destination entirely!",
+        "code_snippet": "# Guiding the Clockwork Sentinel\nmove_forward()\nmove_forward()\nturn_right()\nmove_forward()\n\nprint(\"Guardian reaches the activation crystal!\")"
+      }
+    },
+    {
+      "id": "puzzle_conditional_door",
+      "concept": "conditions",
+      "title": "The Sylvan Runic Gateway",
+      "description": "The moss-covered doorway will only unseal if the bearer carries the Emerald Seal of Concord. Otherwise, you must search the ancient roots.",
+      "available_options": [
+        {
+          "id": "has_seal",
+          "label": "Present the Emerald Seal to the runes (if has_seal: open_gate())",
+          "is_correct": true
+        },
+        {
+          "id": "force_open",
+          "label": "Try to force the massive stone doors without checking conditions",
+          "is_correct": false
+        },
+        {
+          "id": "ignore_runes",
+          "label": "Ignore the lock and assume the gate is already unlocked",
+          "is_correct": false
+        }
+      ],
+      "hint": "Doors evaluate conditions: IF the condition is met, take the path; ELSE, take an alternate route.",
+      "python_reveal": {
+        "concept_name": "Conditional Logic (if / else)",
+        "explanation": "Conditions allow software to make decisions dynamically based on whether a statement evaluates to True or False.",
+        "code_snippet": "# The Runic Gatekeeper\nhas_emerald_seal = True\n\nif has_emerald_seal:\n    open_portal()\n    print(\"The ancient archway glows and unseals.\")\nelse:\n    search_for_seal()\n    print(\"The gate remains dormant stone.\")"
+      }
+    },
+    {
+      "id": "puzzle_loop_tiles",
+      "concept": "loops",
+      "title": "The Resonating Conduit of Five Tiles",
+      "description": "To power the reservoir pumps, five identical crystalline tiles must be energized in sequence. Instead of manually carving five separate commands, channel a continuous repetitive loop.",
+      "target_count": 5,
+      "available_actions": ["LOOP_5_STEPS", "STEP_ONCE_AND_STOP", "RANDOM_JUMP"],
+      "correct_action": "LOOP_5_STEPS",
+      "hint": "When performing the exact same action multiple times, repetitive commands are consolidated into a loop.",
+      "python_reveal": {
+        "concept_name": "Iteration & Loops (for ... in range())",
+        "explanation": "A loop repeats a block of code a specified number of times without having to duplicate lines.",
+        "code_snippet": "# Energizing the five resonance tiles\nfor step in range(5):\n    energize_tile(step)\n    print(f\"Tile {step + 1}/5 harmonized with life energy!\")\n\nprint(\"The reservoir pump activates at full power!\")"
+      }
+    }
+  ]
+}

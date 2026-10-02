@@ -1,0 +1,38 @@
+{
+  "quests": [
+    {
+      "id": "quest_water_crisis",
+      "title": "The Dried Springs of Elarion",
+      "description": "The sacred crystalline waters flowing into Whispering Village have suddenly ceased. Investigate the cause and restore water before the harvest fails.",
+      "stage": "investigation",
+      "pathways": [
+        {
+          "id": "pathway_mechanical",
+          "title": "Inspect the River Aqueduct & Clockwork Machinery",
+          "description": "Head down to the roaring sluice gates where Mira's gears have seized up near ancient mechanical automata.",
+          "location": "River Aqueduct",
+          "recommended_agent": "Logic & Learning (Sequence)",
+          "associated_concept": "sequence"
+        },
+        {
+          "id": "pathway_spiritual",
+          "title": "Commune with the Ancient Forest Spirit",
+          "description": "Venture into the misty canopy of the Ancient Grove to petition Sylvan, guardian of the mountain springs.",
+          "location": "Ancient Grove",
+          "recommended_agent": "Story Weaver (Dialogue & Conditional Logic)",
+          "associated_concept": "conditions"
+        },
+        {
+          "id": "pathway_deep_ruins",
+          "title": "Delve into the Subterranean Energy Vaults",
+          "description": "Explore beneath the old reservoir where runic conduits require sustained repetitive energy pulses.",
+          "location": "Clockwork Ruins",
+          "recommended_agent": "World Keeper (Loops & Automation)",
+          "associated_concept": "loops"
+        }
+      ],
+      "completed": false,
+      "outcome": null
+    }
+  ]
+}
