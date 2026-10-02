@@ -51,6 +51,17 @@ class LearningEngine:
 
         if puzzle.concept not in progress.concepts_encountered:
             progress.concepts_encountered.append(puzzle.concept)
+            # Record Discovery in The Codex of Becoming (PART 9)
+            concept_title = puzzle.concept.capitalize()
+            progress.codex_entries.append({
+                "category": "discovery",
+                "concept": concept_title,
+                "title": f"Discovery: {puzzle.title}",
+                "fantasy_lore": puzzle.description,
+                "programming_concept": getattr(puzzle.python_reveal, 'concept_name', concept_title),
+                "code_example": getattr(puzzle.python_reveal, 'code_snippet', ''),
+                "mastery_status": "In Progress"
+            })
 
         is_correct = False
         feedback = ""
