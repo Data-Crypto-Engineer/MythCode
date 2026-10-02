@@ -30,8 +30,9 @@ HAS_CREWAI = False
 try:
     import crewai  # type: ignore
     HAS_CREWAI = True
-except ImportError:
+except Exception as e:
     HAS_CREWAI = False
+    logger.warning(f"CrewAI import unavailable (fallback to native deterministic orchestration): {e}")
 
 class MythWeaverCrew:
     """Orchestrates multi-agent execution pipeline for MythCode."""
@@ -125,33 +126,69 @@ class MythWeaverCrew:
                 if puzzle_id == "puzzle_sequence_guardian" and challenge_result:
                     director_plan["proposed_state_changes"]["clockwork_guardian"] = "operational"
                     director_plan["proposed_state_changes"]["village_morale"] = world_state.village_morale + 15
+                    player_profile.xp += 50
                     self.storage.add_character_memory(
                         player_id=player_id,
                         npc_name="Mira",
                         event_summary="Player solved the sequence alignment and awakened the Clockwork Guardian!",
                         sentiment="positive"
                     )
+                    # Add to Codex of Becoming (PART 9)
+                    learning_progress.codex_entries.append({
+                        "category": "mastery",
+                        "concept": "Sequence",
+                        "title": "Mastery of Sequential Flow",
+                        "fantasy_lore": "Ordered incantations dictate physical motion. One misstep alters destination.",
+                        "programming_concept": "Instructions execute line-by-line in exact chronological order.",
+                        "code_example": "move_forward()\nmove_forward()\nturn_right()\nmove_forward()",
+                        "mastery_status": "Mastered"
+                    })
 
                 # If conditional door solved, increase spirit trust
                 elif puzzle_id == "puzzle_conditional_door" and challenge_result:
                     director_plan["proposed_state_changes"]["forest_spirit_trust"] = min(10, world_state.forest_spirit_trust + 4)
+                    player_profile.xp += 50
                     self.storage.add_character_memory(
                         player_id=player_id,
                         npc_name="Sylvan",
                         event_summary="Player understood conditional evaluation and respected the runic seal.",
                         sentiment="positive"
                     )
+                    # Add to Codex of Becoming (PART 9)
+                    learning_progress.codex_entries.append({
+                        "category": "mastery",
+                        "concept": "Conditions",
+                        "title": "Mastery of Conditional Gates",
+                        "fantasy_lore": "Magical portals evaluate boolean reality: truth permits passage; falsehood seals the gate.",
+                        "programming_concept": "if/else branches choose pathways based on boolean condition truth.",
+                        "code_example": "if has_emerald_seal:\n    open_portal()\nelse:\n    search_for_seal()",
+                        "mastery_status": "Mastered"
+                    })
 
                 # If loop puzzle solved, restore water supply!
                 elif puzzle_id == "puzzle_loop_tiles" and challenge_result:
                     director_plan["proposed_state_changes"]["water_supply"] = "restored"
                     director_plan["proposed_state_changes"]["village_morale"] = min(100, world_state.village_morale + 25)
+                    player_profile.xp += 100
                     self.storage.add_character_memory(
                         player_id=player_id,
                         npc_name="Elder Thorne",
                         event_summary="Player channeled the loop resonance and fully restored water to Whispering Village!",
                         sentiment="positive"
                     )
+                    # Add to Codex of Becoming (PART 9)
+                    learning_progress.codex_entries.append({
+                        "category": "mastery",
+                        "concept": "Loops",
+                        "title": "Mastery of Iterative Resonance",
+                        "fantasy_lore": "Energy channeled in loops repeats across multiple conduits without redundant effort.",
+                        "programming_concept": "for loops repeat execution blocks across sequences or ranges.",
+                        "code_example": "for step in range(5):\n    energize_tile(step)",
+                        "mastery_status": "Mastered"
+                    })
+
+            # Calculate Player Level from XP
+            player_profile.level = 1 + (player_profile.xp // 75)
 
             # Update player insight
             insight_res = self.player_insight.analyze_interaction(
@@ -186,7 +223,8 @@ class MythWeaverCrew:
                 world_state=new_world_state.to_dict(),
                 player_profile=player_profile.to_dict(),
                 character_memories=memories,
-                learning_progress=learning_progress.to_dict()
+                learning_progress=learning_progress.to_dict(),
+                player_action=action_text
             )
             telemetry.append({
                 "agent": "StoryWeaverAgent",
@@ -223,6 +261,7 @@ class MythWeaverCrew:
                 "puzzle_feedback": puzzle_feedback,
                 "puzzle_correct": challenge_result,
                 "revealed_code": revealed_code,
+                "active_challenge": director_plan.get("active_challenge"),
                 "telemetry": telemetry,
                 "execution_ms": elapsed_ms,
                 "using_crewai": HAS_CREWAI
