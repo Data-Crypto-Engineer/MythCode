@@ -1,6 +1,7 @@
 """
 Director Agent (Agent 1).
 Central experience coordinator proposing narrative transitions and pacing.
+Accurately distinguishes dialogue, investigation, movement, and puzzle triggers.
 """
 from typing import Dict, Any, List, Optional
 from utils.logger import setup_logger
@@ -35,52 +36,94 @@ class DirectorAgent:
         traits = player_profile.get("traits", {})
         action_lower = player_action.lower()
 
-        # Determine suggested challenge & agent focus
         suggested_challenge = None
         target_location = location
         proposed_state_changes = {}
+        beat_id = "general_exploration"
+        active_challenge = None
 
-        if "aqueduct" in action_lower or "waterwheel" in action_lower or "river" in action_lower:
-            target_location = "River Aqueduct"
-            suggested_challenge = "puzzle_sequence_guardian"
-            required_agents = ["StoryWeaver", "WorldKeeper", "LogicLearning"]
-            objective = "Reach the seized sluice gates and restore mechanical flow."
-
-        elif "grove" in action_lower or "forest" in action_lower or "spirit" in action_lower:
-            target_location = "Ancient Grove"
-            suggested_challenge = "puzzle_conditional_door"
-            required_agents = ["StoryWeaver", "ContinuitySafety"]
-            objective = "Commune with Sylvan the Forest Spirit and evaluate the runic seals."
-
-        elif "ruins" in action_lower or "vault" in action_lower or "subterranean" in action_lower or "tile" in action_lower:
-            target_location = "Clockwork Ruins"
-            suggested_challenge = "puzzle_loop_tiles"
-            required_agents = ["StoryWeaver", "LogicLearning"]
-            objective = "Energize the ancient subterranean resonance conduits using iterative loops."
-
-        elif "village" in action_lower or "return" in action_lower:
+        # 1. Whispering Village actions
+        if "fountain" in action_lower or "pipes" in action_lower or "stonework" in action_lower:
             target_location = "Whispering Village"
-            required_agents = ["StoryWeaver", "WorldKeeper"]
-            objective = "Converse with elders and check village morale."
+            beat_id = "inspect_fountain"
+            objective = "Analyze the dried conduits of the village fountain."
+
+        elif "mira" in action_lower or "workshop" in action_lower:
+            target_location = "Whispering Village"
+            beat_id = "dialogue_mira"
+            objective = "Confer with Mira at her workshop about the waterwheel mechanism."
+
+        elif "elder" in action_lower or "thorne" in action_lower or "morale" in action_lower:
+            target_location = "Whispering Village"
+            beat_id = "dialogue_thorne"
+            objective = "Speak with Elder Thorne regarding the town's diminishing rations."
+
+        # 2. Movement to River Aqueduct
+        elif "travel downstream" in action_lower or "aqueduct" in action_lower or "head_to_river" in action_lower or "go to aqueduct" in action_lower:
+            target_location = "River Aqueduct"
+            beat_id = "aqueduct_arrival"
+            objective = "Reach the seized sluice gates at the River Aqueduct."
+
+        # 3. Sequence Challenge Trigger
+        elif "guardian" in action_lower or "sequence" in action_lower or "control altar" in action_lower or "puzzle_sequence" in action_lower:
+            target_location = "River Aqueduct"
+            beat_id = "challenge_sequence"
+            suggested_challenge = "puzzle_sequence_guardian"
+            active_challenge = "puzzle_sequence_guardian"
+            objective = "Assemble the ordered sequence of movement commands to guide the guardian."
+
+        # 4. Movement to Ancient Grove
+        elif "ancient grove" in action_lower or "venture into the misty" in action_lower or "head to grove" in action_lower:
+            target_location = "Ancient Grove"
+            beat_id = "grove_arrival"
+            objective = "Seek audience with Sylvan the Forest Spirit under the ancient canopy."
+
+        # 5. Condition Challenge Trigger
+        elif "runic portal" in action_lower or "condition" in action_lower or "emerald seal" in action_lower or "puzzle_conditional" in action_lower or "gate" in action_lower:
+            target_location = "Ancient Grove"
+            beat_id = "challenge_conditions"
+            suggested_challenge = "puzzle_conditional_door"
+            active_challenge = "puzzle_conditional_door"
+            objective = "Evaluate the condition required to safely unseal the Sylvan gateway."
+
+        # 6. Movement to Clockwork Ruins
+        elif "ruins" in action_lower or "subterranean" in action_lower or "vault" in action_lower or "conduit chamber" in action_lower:
+            target_location = "Clockwork Ruins"
+            beat_id = "ruins_arrival"
+            objective = "Explore the subterranean energy vault beneath the dried reservoir."
+
+        # 7. Loop Challenge Trigger
+        elif "tiles" in action_lower or "loop" in action_lower or "repetitive" in action_lower or "puzzle_loop" in action_lower or "harmonize" in action_lower:
+            target_location = "Clockwork Ruins"
+            beat_id = "challenge_loops"
+            suggested_challenge = "puzzle_loop_tiles"
+            active_challenge = "puzzle_loop_tiles"
+            objective = "Channel a continuous repetitive loop across all 5 resonance tiles."
+
+        # 8. Return to Whispering Village
+        elif "return to whispering village" in action_lower or "return_village" in action_lower or "walk back" in action_lower:
+            target_location = "Whispering Village"
+            beat_id = "village_return"
+            objective = "Return to Whispering Village square."
 
         else:
-            required_agents = ["StoryWeaver", "PlayerInsight"]
-            objective = "Explore the surroundings and discover new pathways."
+            objective = f"Continue exploring {location}."
+            beat_id = f"{location.lower().replace(' ', '_')}_default"
 
         proposed_state_changes["current_location"] = target_location
 
         proposal = {
-            "proposed_next_event": f"Transition to {target_location} to pursue '{objective}'",
+            "proposed_next_event": f"Beat '{beat_id}' at {target_location}: {objective}",
+            "beat_id": beat_id,
             "narrative_objective": objective,
-            "required_agent_contributions": required_agents,
+            "target_location": target_location,
+            "active_challenge": active_challenge,
             "suggested_challenge_category": suggested_challenge,
             "proposed_state_changes": proposed_state_changes,
             "rationale": (
-                f"Player indicated intent '{player_action}'. Given preference profile "
-                f"(Puzzle: {traits.get('puzzle_preference', 0.5):.2f}, Exploration: {traits.get('exploration_preference', 0.5):.2f}), "
-                f"routing to {target_location} optimizes narrative engagement."
+                f"Player action '{player_action}' routed to beat '{beat_id}' at {target_location}."
             )
         }
 
-        logger.info(f"Director planned: {proposal['proposed_next_event']}")
+        logger.info(f"Director planned beat '{beat_id}' at {target_location}")
         return proposal
