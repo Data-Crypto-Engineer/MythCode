@@ -37,11 +37,21 @@ class StateManager:
         self._last_valid_world = world
         return world
 
-    def load_or_init_player(self, name: str = "Aria", role: str = "Clockwork Scholar", style: str = "Analytical") -> PlayerProfile:
+    def load_or_init_player(self, **kwargs) -> PlayerProfile:
         saved = self.storage.get_player_profile(self.player_id)
         if saved:
             return PlayerProfile.from_dict(saved)
-        profile = PlayerProfile(id=self.player_id, name=name, role=role, adventure_style=style)
+        default_data = {
+            "id": self.player_id,
+            "name": "Aria",
+            "role": "Rune Engineer",
+            "adventure_style": "Analytical",
+            "magical_affinity": "Arcane",
+            "companion": "Clockwork Owl",
+            "keepsake": "Brass Chrono-Gear"
+        }
+        default_data.update(kwargs)
+        profile = PlayerProfile.from_dict(default_data)
         self.storage.save_player_profile(profile.to_dict())
         return profile
 
