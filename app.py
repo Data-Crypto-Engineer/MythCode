@@ -1,103 +1,125 @@
 """
 MythCode — Adaptive Multi-Agent Fantasy Adventure & Experiential Programming Learning Platform.
-Frontend: Streamlit | Multi-Agent Orchestration: CrewAI | Storage: SQLite
+Architecture: Streamlit Storybook UI | Multi-Agent Coordination | SQLite & JSON Backup | Cloudflare AI & Gemini Layer
 """
 import streamlit as st
 import time
+import json
 from core.game_engine import GameEngine
 from utils.config import get_app_config
 from utils.error_handler import handle_exception
+from utils.cloudflare_images import get_image_service
 
-# Page Configuration with storybook aesthetic
+# 1. Page Configuration
 st.set_page_config(
-    page_title="MythCode — Multi-Agent Fantasy Adventure",
+    page_title="MythCode — Fantasy Adventure & Programming Learning",
     page_icon="✨",
     layout="wide",
     initial_sidebar_state="expanded"
 )
 
-# Custom Enchanted CSS Theme (Misty lavender, warm cream, muted gold, forest green)
+# 2. Warm Fantasy Storybook Visual System (PART 11)
+# Palette: Warm Parchment (#F7F1E6), Soft Lavender (#DCD2F2), Sage (#C9D8C1), Muted Gold (#D7B978), Peach (#F2CDBD), Ink (#362E3B)
 st.markdown("""
 <style>
-    @import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@500;700&family=Crimson+Pro:ital,wght@0,400;0,600;1,400&family=JetBrains+Mono:wght@400;600&display=swap');
+    @import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700;800&family=Crimson+Pro:ital,wght@0,400;0,600;1,400&family=JetBrains+Mono:wght@400;600&display=swap');
 
     .stApp {
-        background: linear-gradient(135deg, #0d131a 0%, #151d28 50%, #111a22 100%);
-        color: #e6edf3;
+        background-color: #F8F4EB;
+        background-image: radial-gradient(#E8DFC8 1px, transparent 1px);
+        background-size: 24px 24px;
+        color: #2D251E;
         font-family: 'Crimson Pro', Georgia, serif;
-        font-size: 1.15rem;
+        font-size: 1.18rem;
     }
 
-    h1, h2, h3, h4 {
-        font-family: 'Cinzel', serif !important;
-        letter-spacing: 0.05em;
-        color: #f6e05e !important;
+    /* Headings */
+    h1, h2, h3, h4, h5, h6 {
+        font-family: 'Cinzel', Georgia, serif !important;
+        color: #4A3525 !important;
+        letter-spacing: 0.04em;
     }
 
+    /* Storybook Banner */
     .storybook-banner {
-        background: radial-gradient(circle at 50% 30%, rgba(212, 175, 55, 0.15) 0%, rgba(20, 30, 45, 0.95) 100%);
-        border: 1px solid rgba(212, 175, 55, 0.3);
-        border-radius: 12px;
+        background: linear-gradient(135deg, #FFFDF9 0%, #F5ECE0 60%, #EFE1D0 100%);
+        border: 2px solid #D7B978;
+        border-radius: 16px;
         padding: 2.2rem;
         text-align: center;
         margin-bottom: 2rem;
-        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+        box-shadow: 0 8px 30px rgba(90, 70, 50, 0.08);
     }
 
     .storybook-banner h1 {
-        font-size: 2.8rem;
-        margin-bottom: 0.3rem;
-        text-shadow: 0 0 20px rgba(246, 224, 94, 0.4);
+        font-size: 2.7rem;
+        margin-bottom: 0.2rem;
+        color: #5C4033 !important;
     }
 
     .storybook-tagline {
         font-style: italic;
-        color: #9ae6b4;
-        font-size: 1.3rem;
+        color: #6B7A60;
+        font-size: 1.25rem;
     }
 
+    /* Scene Card */
     .scene-card {
-        background: rgba(22, 33, 49, 0.85);
-        border: 1px solid rgba(154, 230, 180, 0.25);
-        border-radius: 10px;
+        background: #FFFFFF;
+        border: 1px solid #E2D5C3;
+        border-left: 6px solid #D7B978;
+        border-radius: 12px;
         padding: 1.8rem;
         margin-bottom: 1.5rem;
-        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+        box-shadow: 0 4px 20px rgba(70, 50, 30, 0.06);
+    }
+
+    /* Dialogue Bubble */
+    .dialogue-box {
+        background: #FAF6EE;
+        border: 1px solid #E8DFD1;
+        border-left: 4px solid #7B8F72;
+        padding: 1.2rem 1.6rem;
+        font-style: italic;
+        color: #382F26;
+        border-radius: 0 10px 10px 0;
+        margin: 1.2rem 0;
+        line-height: 1.65;
     }
 
     .speaker-label {
         font-family: 'Cinzel', serif;
-        color: #f6e05e;
+        color: #5C4033;
         font-weight: 700;
         font-size: 1.15rem;
-        margin-bottom: 0.4rem;
+        margin-bottom: 0.3rem;
     }
 
-    .dialogue-box {
-        background: rgba(15, 23, 36, 0.9);
-        border-left: 4px solid #d4af37;
-        padding: 1rem 1.4rem;
-        font-style: italic;
-        color: #fbd38d;
-        border-radius: 0 8px 8px 0;
-        margin: 1rem 0;
+    /* Codex & Reveal Box */
+    .codex-card {
+        background: #FFFFFF;
+        border: 1px solid #DCD2F2;
+        border-top: 4px solid #8A72B8;
+        border-radius: 12px;
+        padding: 1.4rem;
+        margin-bottom: 1.2rem;
+        box-shadow: 0 4px 14px rgba(110, 90, 140, 0.07);
     }
 
-    .python-reveal-box {
-        background: #0d1117;
-        border: 1px solid #38a169;
-        border-radius: 8px;
-        padding: 1.2rem;
-        margin: 1rem 0;
+    /* Action Buttons */
+    .stButton>button {
+        font-family: 'Crimson Pro', Georgia, serif !important;
+        font-size: 1.05rem !important;
+        border-radius: 10px !important;
+        transition: all 0.2s ease !important;
     }
 
-    .telemetry-card {
-        background: rgba(18, 25, 38, 0.95);
-        border-left: 3px solid #63b3ed;
-        padding: 0.8rem 1.1rem;
+    .sidebar-metric {
+        background: #FFFFFF;
+        border: 1px solid #E8DFD1;
+        border-radius: 10px;
+        padding: 0.8rem 1rem;
         margin-bottom: 0.6rem;
-        font-size: 0.92rem;
-        border-radius: 0 6px 6px 0;
     }
 
     code, pre {
@@ -106,12 +128,15 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-# Session State Initialization
+# 3. Session State Initialization
 if "game_engine" not in st.session_state:
     st.session_state.game_engine = GameEngine(player_id="player_default")
 
 if "game_started" not in st.session_state:
     st.session_state.game_started = False
+
+if "active_view" not in st.session_state:
+    st.session_state.active_view = "adventure"  # "adventure", "challenges", "codex", "status", "agents", "backup"
 
 if "active_scene" not in st.session_state:
     st.session_state.active_scene = None
@@ -128,43 +153,110 @@ if "unlocked_code" not in st.session_state:
 if "selected_seq_steps" not in st.session_state:
     st.session_state.selected_seq_steps = []
 
-engine = st.session_state.game_engine
+if "active_challenge_id" not in st.session_state:
+    st.session_state.active_challenge_id = "puzzle_sequence_guardian"
+
+engine: GameEngine = st.session_state.game_engine
+image_service = get_image_service()
 config = get_app_config()
 
-# Sidebar: Kingdom World Status & Multi-Agent Telemetry
+# Helper for Character SVG Avatar Generation
+def generate_character_avatar_svg(name: str, role: str, affinity: str, hair_color: str, companion: str) -> str:
+    color_map = {
+        "Nature": "#7B8F72",
+        "Light": "#E0C870",
+        "Water": "#6EA8B8",
+        "Fire": "#C96D57",
+        "Wind": "#92B8A0",
+        "Arcane": "#8A72B8"
+    }
+    aura_color = color_map.get(affinity, "#8A72B8")
+    hair_map = {
+        "Auburn": "#8B4513",
+        "Silver": "#A8A8A8",
+        "Midnight Black": "#202020",
+        "Golden": "#DAA520",
+        "Emerald": "#2E8B57"
+    }
+    h_color = hair_map.get(hair_color, "#8B4513")
+
+    return f"""
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 160 160" width="100%" height="100%">
+        <circle cx="80" cy="80" r="74" fill="#FAF6EE" stroke="{aura_color}" stroke-width="4" />
+        <!-- Magical Aura Ring -->
+        <circle cx="80" cy="80" r="66" fill="none" stroke="{aura_color}" stroke-width="1.5" stroke-dasharray="4,3" opacity="0.7" />
+        <!-- Robe/Shoulders -->
+        <path d="M35,145 C45,115 115,115 125,145 Z" fill="{aura_color}" opacity="0.85" />
+        <!-- Head -->
+        <circle cx="80" cy="68" r="28" fill="#FADBC8" />
+        <!-- Hair -->
+        <path d="M52,65 C52,40 108,40 108,65 C108,48 52,48 52,65 Z" fill="{h_color}" />
+        <circle cx="56" cy="64" r="7" fill="{h_color}" />
+        <circle cx="104" cy="64" r="7" fill="{h_color}" />
+        <!-- Eyes -->
+        <circle cx="71" cy="67" r="3" fill="#362E3B" />
+        <circle cx="89" cy="67" r="3" fill="#362E3B" />
+        <!-- Gentle smile -->
+        <path d="M75,78 Q80,82 85,78" stroke="#362E3B" stroke-width="1.5" fill="none" />
+        <!-- Companion Badge on bottom right -->
+        <circle cx="120" cy="120" r="16" fill="#FFFFFF" stroke="#D7B978" stroke-width="2" />
+        <text x="120" y="125" font-size="14" text-anchor="middle">✨</text>
+    </svg>
+    """
+
+# 4. Sidebar: Kingdom Status & Navigation
 with st.sidebar:
     st.markdown("### 🏰 Kingdom of Elarion")
     state_dict = engine.state_mgr.load_or_init_world().to_dict()
     player_dict = engine.state_mgr.load_or_init_player().to_dict()
     learning_dict = engine.state_mgr.load_or_init_learning().to_dict()
 
-    col1, col2 = st.columns(2)
-    with col1:
+    col_w1, col_w2 = st.columns(2)
+    with col_w1:
         st.metric("Water Supply", state_dict.get("water_supply", "damaged").capitalize())
         st.metric("Village Morale", f"{state_dict.get('village_morale', 60)}%")
-    with col2:
+    with col_w2:
         st.metric("Spirit Trust", f"{state_dict.get('forest_spirit_trust', 0)} / 10")
         st.metric("Guardian", state_dict.get("clockwork_guardian", "inactive").capitalize())
 
     st.markdown("---")
-    st.markdown("### 🧠 Adaptive Player Model")
-    traits = player_dict.get("traits", {})
-    st.caption(f"**Challenge Level**: {traits.get('challenge_level', 1)} / 5")
-    st.progress(traits.get("exploration_preference", 0.5), text=f"Exploration: {int(traits.get('exploration_preference', 0.5)*100)}%")
-    st.progress(traits.get("puzzle_preference", 0.5), text=f"Puzzle Affinity: {int(traits.get('puzzle_preference', 0.5)*100)}%")
-    st.progress(traits.get("dialogue_preference", 0.5), text=f"Dialogue: {int(traits.get('dialogue_preference', 0.5)*100)}%")
+    st.markdown(f"### 🧙 Hero: {player_dict.get('name', 'Aria')}")
+    st.caption(f"**Role:** {player_dict.get('role', 'Rune Engineer')} | **Level {player_dict.get('level', 1)}** ({player_dict.get('xp', 0)} XP)")
+    st.caption(f"**Affinity:** {player_dict.get('magical_affinity', 'Arcane')} | **Companion:** {player_dict.get('companion', 'Clockwork Owl')}")
 
+    # Navigation Buttons (PART 3: Observable, reliable navigation)
     st.markdown("---")
-    st.markdown("### 🤖 CrewAI Agent Telemetry")
-    if st.session_state.last_telemetry:
-        for t in st.session_state.last_telemetry:
-            st.markdown(f"""
-            <div class="telemetry-card">
-                <strong style="color: #63b3ed;">{t.get('agent')}:</strong> {t.get('output')}
-            </div>
-            """, unsafe_allow_html=True)
-    else:
-        st.caption("Awaiting player action to invoke Director and Agent workflow...")
+    st.markdown("### 🧭 Adventure Navigation")
+    
+    btn_adv = st.button("🗺️ Story Scene", use_container_width=True, type="primary" if st.session_state.active_view == "adventure" else "secondary")
+    if btn_adv:
+        st.session_state.active_view = "adventure"
+        st.rerun()
+
+    btn_chal = st.button("🧩 Runic Challenges", use_container_width=True, type="primary" if st.session_state.active_view == "challenges" else "secondary")
+    if btn_chal:
+        st.session_state.active_view = "challenges"
+        st.rerun()
+
+    btn_codex = st.button("📖 The Codex of Becoming", use_container_width=True, type="primary" if st.session_state.active_view == "codex" else "secondary")
+    if btn_codex:
+        st.session_state.active_view = "codex"
+        st.rerun()
+
+    btn_status = st.button("📜 Quest Log & Realm", use_container_width=True, type="primary" if st.session_state.active_view == "status" else "secondary")
+    if btn_status:
+        st.session_state.active_view = "status"
+        st.rerun()
+
+    btn_agents = st.button("🤖 Multi-Agent Telemetry", use_container_width=True, type="primary" if st.session_state.active_view == "agents" else "secondary")
+    if btn_agents:
+        st.session_state.active_view = "agents"
+        st.rerun()
+
+    btn_backup = st.button("💾 Backup & Restore", use_container_width=True, type="primary" if st.session_state.active_view == "backup" else "secondary")
+    if btn_backup:
+        st.session_state.active_view = "backup"
+        st.rerun()
 
     st.markdown("---")
     if st.button("🔄 Reset Adventure", help="Resets stored adventure and returns to character creation"):
@@ -175,15 +267,16 @@ with st.sidebar:
         st.session_state.unlocked_code = None
         st.session_state.puzzle_feedback = None
         st.session_state.selected_seq_steps = []
+        st.session_state.active_view = "adventure"
         st.rerun()
 
-# ----------------- SECTION A & B: WELCOME & CHARACTER CREATION -----------------
+# ----------------- SECTION A: CHARACTER CREATOR (PART 4) -----------------
 if not st.session_state.game_started:
     st.markdown("""
     <div class="storybook-banner">
         <h1>✨ MYTHCODE ✨</h1>
-        <div class="storybook-tagline">"An adaptive fantasy world where every choice teaches you something."</div>
-        <p style="margin-top: 1rem; color: #cbd5e0; max-width: 650px; margin-left: auto; margin-right: auto;">
+        <div class="storybook-tagline">"Every spell is a program. Every decision changes the world."</div>
+        <p style="margin-top: 1rem; color: #4A3B32; max-width: 680px; margin-left: auto; margin-right: auto;">
             Step into the Kingdom of Elarion. Its ancient mountain springs have gone quiet, and mysterious clockwork sentinels
             await instruction. As you explore, you will discover that magic and computational thinking share the same truth:
             instruction order matters, conditions open locked doors, and loops harmonize the world.
@@ -191,40 +284,65 @@ if not st.session_state.game_started:
     </div>
     """, unsafe_allow_html=True)
 
-    col_left, col_right = st.columns([1, 1])
+    st.subheader("📜 Chronicle Your Hero (Character Creator)")
+    col_c1, col_c2 = st.columns([1.2, 0.8])
 
-    with col_left:
-        st.subheader("📜 Chronicle Your Hero")
-        char_name = st.text_input("Hero Name", value="Aria", max_chars=30)
-        char_role = st.selectbox(
-            "Fantasy Calling",
-            ["Clockwork Scholar", "Sylvan Wayfarer", "Alchemical Artificer", "Runesmith Apprentice"]
+    with col_c1:
+        c_sub1, c_sub2 = st.columns(2)
+        with c_sub1:
+            hero_name = st.text_input("Hero Name", value="Aria", max_chars=30)
+            hero_pronouns = st.selectbox("Pronouns", ["they/them", "she/her", "he/him", "ze/zir", "custom"])
+            hero_role = st.selectbox(
+                "Fantasy Calling",
+                ["Rune Engineer", "Spellweaver", "Forest Guardian", "Star Cartographer", "Alchemist", "Shadow Explorer"]
+            )
+            hero_affinity = st.selectbox(
+                "Primary Magical Affinity",
+                ["Arcane", "Nature", "Water", "Light", "Fire", "Wind"]
+            )
+
+        with c_sub2:
+            hero_hair = st.selectbox("Hair Color", ["Auburn", "Silver", "Midnight Black", "Golden", "Emerald"])
+            hero_companion = st.selectbox(
+                "Familiar Companion",
+                ["Clockwork Owl", "Sylvan Sprite", "Runestone Fox", "Ember Salamander", "Zephyr Finch"]
+            )
+            hero_keepsake = st.selectbox(
+                "Starting Keepsake",
+                ["Brass Chrono-Gear", "Dried Star-Blossom", "River Prism", "Carved Rune-Tablet", "Alchemical Vial"]
+            )
+            hero_style = st.selectbox(
+                "Learning Demeanor",
+                ["Hands-on Experimentation", "Visual Step-by-Step", "Theoretical Lore", "Trial & Error Debugging"]
+            )
+
+        hero_personality = st.text_input("Personality Trait", value="Curious & Observant")
+
+    with col_c2:
+        st.markdown("#### Hero Portrait Preview")
+        avatar_svg = generate_character_avatar_svg(hero_name, hero_role, hero_affinity, hero_hair, hero_companion)
+        st.components.v1.html(avatar_svg, height=180)
+        st.caption(f"**{hero_name}** the *{hero_role}*, attuned to **{hero_affinity}** arcana, accompanied by a faithful **{hero_companion}**.")
+
+    if st.button("🌟 Embark Into Elarion", type="primary", use_container_width=True):
+        engine.initialize_session(
+            name=hero_name,
+            pronouns=hero_pronouns,
+            role=hero_role,
+            magical_affinity=hero_affinity,
+            hair_color=hero_hair,
+            companion=hero_companion,
+            keepsake=hero_keepsake,
+            learning_style=hero_style,
+            personality=hero_personality
         )
-        adventure_style = st.select_slider(
-            "Preferred Adventure Demeanor",
-            options=["Cautious & Analytical", "Bold & Exploratory", "Diplomatic & Patient", "Experimental & Inquisitive"]
-        )
+        res = engine.execute_action(f"{hero_name} arrives in Whispering Village to investigate the dried springs.")
+        st.session_state.active_scene = res["scene"]
+        st.session_state.last_telemetry = res.get("telemetry", [])
+        st.session_state.game_started = True
+        st.rerun()
 
-        if st.button("🌟 Embark Into Elarion", type="primary", use_container_width=True):
-            engine.initialize_session(name=char_name, role=char_role, style=adventure_style)
-            # Execute initial arrival action
-            res = engine.execute_action(f"{char_name} arrives in Whispering Village to investigate the dried springs.")
-            st.session_state.active_scene = res["scene"]
-            st.session_state.last_telemetry = res.get("telemetry", [])
-            st.session_state.game_started = True
-            st.rerun()
-
-    with col_right:
-        st.subheader("📖 The Core Philosophy")
-        st.info(
-            "**Your choices shape the world. Your world shapes your mind.**\n\n"
-            "• **Sequence**: Guide a clockwork sentinel step-by-step through ancient sluice gates.\n"
-            "• **Conditions**: Evaluate whether magical conditions allow runic portals to open.\n"
-            "• **Loops**: Channel sustained rhythmic pulses to energize water conduits.\n\n"
-            "*Each discovered mechanic unlocks real Python programming syntax in The Unwritten Journal.*"
-        )
-
-# ----------------- MAIN ADVENTURE INTERFACE -----------------
+# ----------------- SECTION B: ACTIVE GAMEPLAY VIEWS -----------------
 else:
     scene = st.session_state.active_scene
     if not scene:
@@ -233,17 +351,21 @@ else:
         st.session_state.active_scene = scene
         st.session_state.last_telemetry = res.get("telemetry", [])
 
-    tabs = st.tabs(["🗺️ Adventure Scene", "📖 The Unwritten Journal", "📜 Quest Log", "🧩 Active Challenge"])
+    # VIEW 1: STORY SCENE (PART 3 & PART 11)
+    if st.session_state.active_view == "adventure":
+        # Region Storybook Illustration (PART 5)
+        current_loc = scene.get('location', state_dict.get('current_location', 'Whispering Village'))
+        illustration_url = image_service.get_illustration(current_loc)
+        if illustration_url:
+            st.image(illustration_url, use_container_width=True)
 
-    # TAB 1: ADVENTURE SCENE
-    with tabs[0]:
         st.markdown(f"""
         <div class="scene-card">
-            <span style="font-size: 0.9rem; text-transform: uppercase; letter-spacing: 0.1em; color: #68d391;">
-                📍 Location: {scene.get('location', state_dict.get('current_location', 'Whispering Village'))}
-            </span>
-            <h2 style="margin-top: 0.3rem;">{scene.get('scene_title', 'A Moment of Contemplation')}</h2>
-            <p>{scene.get('scene_description', '')}</p>
+            <div style="font-size: 0.95rem; text-transform: uppercase; letter-spacing: 0.08em; color: #7B8F72; font-weight: 600; margin-bottom: 0.4rem;">
+                📍 Region: {current_loc}
+            </div>
+            <h2 style="margin-top: 0; color: #5C4033;">{scene.get('scene_title', 'A Moment of Contemplation')}</h2>
+            <p style="color: #362E3B; font-size: 1.15rem; line-height: 1.7;">{scene.get('scene_description', '')}</p>
             <div class="dialogue-box">
                 <div class="speaker-label">🗣️ {scene.get('speaker', 'Elder Thorne')}:</div>
                 "{scene.get('dialogue', 'Traveler, the waters await your wisdom.')}"
@@ -251,35 +373,43 @@ else:
         </div>
         """, unsafe_allow_html=True)
 
-        # Puzzle feedback or code unlock banner
+        # Feedback & Code Reveal Banners
         if st.session_state.puzzle_feedback:
-            is_success = "achieved" in st.session_state.puzzle_feedback.lower() or "evaluates the condition as true" in st.session_state.puzzle_feedback.lower() or "activates" in st.session_state.puzzle_feedback.lower()
+            is_success = "achieved" in st.session_state.puzzle_feedback.lower() or "true" in st.session_state.puzzle_feedback.lower() or "activates" in st.session_state.puzzle_feedback.lower()
             if is_success:
-                st.success(f"🌟 **Challenge Mastered!** {st.session_state.puzzle_feedback}")
+                st.success(f"🌟 **Arcana Mastered!** {st.session_state.puzzle_feedback}")
             else:
-                st.warning(f"⚠️ **Notice:** {st.session_state.puzzle_feedback}")
+                st.warning(f"⚠️ **Observation:** {st.session_state.puzzle_feedback}")
 
         if st.session_state.unlocked_code:
             reveal = st.session_state.unlocked_code
             st.markdown(f"""
-            <div class="python-reveal-box">
-                <h4 style="color: #68d391; margin-bottom: 0.4rem;">🐍 Python Concept Discovered: {reveal.get('concept_name')}</h4>
-                <p style="color: #cbd5e0; font-size: 1rem;">{reveal.get('explanation')}</p>
+            <div class="codex-card">
+                <h4 style="margin-top: 0; color: #8A72B8;">✨ Runic Spell Revealed: {reveal.get('concept_name')}</h4>
+                <p style="font-size: 1.05rem; color: #4A3E50;">{reveal.get('explanation')}</p>
             </div>
             """, unsafe_allow_html=True)
             st.code(reveal.get("code_snippet"), language="python")
 
+        # Interactive Choice Buttons (PART 3: Trace complete path and produce observable results)
         st.markdown("### 🏹 What will you do next?")
         choices = scene.get("choices", [])
         cols = st.columns(len(choices) if choices else 1)
 
         for idx, choice in enumerate(choices):
             with cols[idx]:
-                if st.button(f"✨ {choice['text']}", key=f"choice_{choice['id']}_{idx}", use_container_width=True):
-                    # Route to challenge tab if puzzle choice
-                    if "puzzle" in choice['id']:
-                        st.info("Directing focus to the Active Challenge tab...")
-                        # Set active tab
+                if st.button(f"✨ {choice['text']}", key=f"choice_btn_{idx}", use_container_width=True):
+                    # Check if action is a challenge trigger
+                    c_text = choice['text'].lower()
+                    if "puzzle" in c_text or "guardian" in c_text or "condition" in c_text or "loop" in c_text:
+                        if "guardian" in c_text or "sequence" in c_text:
+                            st.session_state.active_challenge_id = "puzzle_sequence_guardian"
+                        elif "door" in c_text or "condition" in c_text or "gateway" in c_text:
+                            st.session_state.active_challenge_id = "puzzle_conditional_door"
+                        elif "loop" in c_text or "tile" in c_text or "repetitive" in c_text:
+                            st.session_state.active_challenge_id = "puzzle_loop_tiles"
+                        st.session_state.active_view = "challenges"
+
                     res = engine.execute_action(choice['text'])
                     st.session_state.active_scene = res["scene"]
                     st.session_state.last_telemetry = res.get("telemetry", [])
@@ -287,34 +417,159 @@ else:
                     st.session_state.puzzle_feedback = res.get("puzzle_feedback")
                     st.rerun()
 
-    # TAB 2: LEARNING JOURNAL (The Unwritten Journal)
-    with tabs[1]:
-        st.subheader("📖 The Unwritten Journal")
-        st.caption("A living compendium of computational principles unveiled through your actions in Elarion.")
+    # VIEW 2: RUNIC CHALLENGES (PART 8: Playable Educational Gameplay)
+    elif st.session_state.active_view == "challenges":
+        st.subheader("🧩 Ancient Runic Challenges (Experiential Learning)")
+        st.caption("Interact with the mechanisms of Elarion. Notice how logical rules dictate physical reality.")
 
-        reveals = learning_dict.get("unlocked_reveals", [])
-        if not reveals:
-            st.info("No computational arcana has been uncovered yet. Solve challenges at the River Aqueduct, Ancient Grove, or Clockwork Ruins to unlock real Python syntax!")
-        else:
-            for rev in reveals:
-                with st.expander(f"✨ {rev.get('concept_name')}", expanded=True):
-                    st.markdown(f"**Principle:** {rev.get('explanation')}")
-                    st.code(rev.get("code_snippet"), language="python")
+        puz_choice = st.selectbox(
+            "Select Challenge to Attempt:",
+            [
+                ("puzzle_sequence_guardian", "Stage 1: Clockwork Guardian (Sequence / Order of Commands)"),
+                ("puzzle_conditional_door", "Stage 2: Sylvan Runic Gateway (Conditions / if-else Logic)"),
+                ("puzzle_loop_tiles", "Stage 3: Resonating Conduits of Five (Loops / Iteration)")
+            ],
+            index=0 if st.session_state.active_challenge_id == "puzzle_sequence_guardian" else (1 if st.session_state.active_challenge_id == "puzzle_conditional_door" else 2),
+            format_func=lambda x: x[1]
+        )
+        puz_id = puz_choice[0]
+        st.session_state.active_challenge_id = puz_id
+        puzzle = engine.learning_engine.get_puzzle(puz_id)
 
-        st.markdown("---")
-        st.markdown("#### 📊 Concept Mastery Metrics")
-        cm = traits.get("concept_mastery", {})
-        m_col1, m_col2, m_col3 = st.columns(3)
-        with m_col1:
-            st.metric("Sequence (Step Order)", f"{int(cm.get('sequence', 0.0)*100)}%")
-        with m_col2:
-            st.metric("Conditions (if / else)", f"{int(cm.get('conditions', 0.0)*100)}%")
-        with m_col3:
-            st.metric("Loops (for iterations)", f"{int(cm.get('loops', 0.0)*100)}%")
+        if puzzle:
+            st.markdown(f"""
+            <div class="scene-card" style="border-left-color: #8A72B8;">
+                <h3 style="margin-top: 0; color: #5C4033;">{puzzle.title}</h3>
+                <p style="font-size: 1.15rem; color: #362E3B;">{puzzle.description}</p>
+            </div>
+            """, unsafe_allow_html=True)
 
-    # TAB 3: QUEST LOG
-    with tabs[2]:
-        st.subheader("📜 Quest Log")
+            # Puzzle 1: Sequence
+            if puz_id == "puzzle_sequence_guardian":
+                st.info("Assemble the exact sequence of 4 movement commands to guide the sentinel forward twice, pivot right, and step to the crystal.")
+                c_btn1, c_btn2, c_btn3, c_clear = st.columns(4)
+                with c_btn1:
+                    if st.button("⬆️ FORWARD", use_container_width=True):
+                        st.session_state.selected_seq_steps.append("FORWARD")
+                with c_btn2:
+                    if st.button("➡️ TURN RIGHT", use_container_width=True):
+                        st.session_state.selected_seq_steps.append("TURN_RIGHT")
+                with c_btn3:
+                    if st.button("⬅️ TURN LEFT", use_container_width=True):
+                        st.session_state.selected_seq_steps.append("TURN_LEFT")
+                with c_clear:
+                    if st.button("🧹 Clear", use_container_width=True):
+                        st.session_state.selected_seq_steps = []
+
+                st.markdown(f"**Current Command Stack:** `{' ➔ '.join(st.session_state.selected_seq_steps) if st.session_state.selected_seq_steps else 'Empty'}`")
+
+                if st.button("⚡ Execute Sequential Program", type="primary", use_container_width=True):
+                    res = engine.solve_challenge(puz_id, st.session_state.selected_seq_steps)
+                    st.session_state.active_scene = res["scene"]
+                    st.session_state.last_telemetry = res.get("telemetry", [])
+                    st.session_state.puzzle_feedback = res.get("puzzle_feedback")
+                    st.session_state.unlocked_code = res.get("revealed_code")
+                    if res.get("puzzle_correct"):
+                        st.session_state.active_view = "adventure"
+                    st.rerun()
+
+            # Puzzle 2: Conditions
+            elif puz_id == "puzzle_conditional_door":
+                options = puzzle.available_options or []
+                selected_opt = st.radio(
+                    "Evaluate Condition for the Sylvan Portal:",
+                    options,
+                    format_func=lambda opt: opt["label"]
+                )
+                if st.button("✨ Evaluate Condition", type="primary", use_container_width=True):
+                    res = engine.solve_challenge(puz_id, selected_opt["id"])
+                    st.session_state.active_scene = res["scene"]
+                    st.session_state.last_telemetry = res.get("telemetry", [])
+                    st.session_state.puzzle_feedback = res.get("puzzle_feedback")
+                    st.session_state.unlocked_code = res.get("revealed_code")
+                    if res.get("puzzle_correct"):
+                        st.session_state.active_view = "adventure"
+                    st.rerun()
+
+            # Puzzle 3: Loops
+            elif puz_id == "puzzle_loop_tiles":
+                loop_action = st.radio(
+                    "Choose Conduit Energy Channeling Strategy:",
+                    [
+                        ("LOOP_5_STEPS", "🔁 Channel a 5-step repetitive loop across all tiles: for step in range(5)"),
+                        ("STEP_ONCE_AND_STOP", "⚡ Send a single burst into tile 1 only and halt"),
+                        ("RANDOM_JUMP", "🎲 Emit random erratic pulses")
+                    ],
+                    format_func=lambda x: x[1]
+                )
+                if st.button("🌀 Activate Conduit Loop", type="primary", use_container_width=True):
+                    res = engine.solve_challenge(puz_id, loop_action[0])
+                    st.session_state.active_scene = res["scene"]
+                    st.session_state.last_telemetry = res.get("telemetry", [])
+                    st.session_state.puzzle_feedback = res.get("puzzle_feedback")
+                    st.session_state.unlocked_code = res.get("revealed_code")
+                    if res.get("puzzle_correct"):
+                        st.session_state.active_view = "adventure"
+                    st.rerun()
+
+            # In-character Pedagogical Hint button
+            if st.button("💡 Consult the Arcane Archives for a Hint"):
+                hint_data = engine.get_hint(puz_id)
+                st.info(f"**Pedagogical Hint:** {hint_data['hint']}")
+
+    # VIEW 3: THE CODEX OF BECOMING (PART 9)
+    elif st.session_state.active_view == "codex":
+        st.subheader("📖 THE CODEX OF BECOMING")
+        st.caption("Your living compendium of computational arcana discovered through your deeds in Elarion.")
+
+        codex_tab1, codex_tab2, codex_tab3 = st.tabs(["✨ Discoveries", "🏆 Masteries", "📜 Your Craft (Python Spells)"])
+
+        with codex_tab1:
+            st.markdown("#### Concepts Encountered in the Wild")
+            enc = learning_dict.get("concepts_encountered", [])
+            if not enc:
+                st.info("No concepts encountered yet. Explore the River Aqueduct, Ancient Grove, or Clockwork Ruins!")
+            else:
+                for c in enc:
+                    st.markdown(f"""
+                    <div class="codex-card" style="border-top-color: #7B8F72;">
+                        <h4 style="margin: 0; color: #4A3525;">🌿 Concept Discovered: {c.capitalize()}</h4>
+                        <p style="margin: 0.4rem 0 0 0; color: #554433; font-size: 1.05rem;">
+                            Encountered during your journey in Elarion. Practice in the Runic Challenges to achieve full mastery.
+                        </p>
+                    </div>
+                    """, unsafe_allow_html=True)
+
+        with codex_tab2:
+            st.markdown("#### Demonstrated Computational Masteries")
+            masteries = [e for e in learning_dict.get("codex_entries", []) if e.get("category") == "mastery"]
+            if not masteries:
+                st.info("No masteries achieved yet. Successfully solve a runic trial to etch a mastery into your Codex!")
+            else:
+                for m in masteries:
+                    st.markdown(f"""
+                    <div class="codex-card" style="border-top-color: #D7B978;">
+                        <h4 style="margin: 0; color: #5C4033;">🏅 {m.get('title')}</h4>
+                        <p style="margin: 0.3rem 0; color: #362E3B;"><strong>Lore:</strong> {m.get('fantasy_lore')}</p>
+                        <p style="margin: 0.3rem 0; color: #4A3E50;"><strong>Computer Science:</strong> {m.get('programming_concept')}</p>
+                    </div>
+                    """, unsafe_allow_html=True)
+
+        with codex_tab3:
+            st.markdown("#### Accumulated Python Knowledge & Code Spells")
+            reveals = learning_dict.get("unlocked_reveals", [])
+            if not reveals:
+                st.info("No Python spells unlocked yet. Solve the Clockwork Guardian, Sylvan Gateway, or Conduits of Five to unlock real code!")
+            else:
+                for rev in reveals:
+                    with st.expander(f"🐍 {rev.get('concept_name')}", expanded=True):
+                        st.markdown(f"**Principle:** {rev.get('explanation')}")
+                        st.code(rev.get("code_snippet"), language="python")
+                        st.caption("This code represents valid, executable Python syntax mirroring the magical mechanism.")
+
+    # VIEW 4: QUEST LOG & REALM (PART 10)
+    elif st.session_state.active_view == "status":
+        st.subheader("📜 Quest Log & Realm Status")
         quests = engine.quest_mgr.get_all_quests()
         for q in quests:
             st.markdown(f"### {q.title}")
@@ -323,92 +578,71 @@ else:
 
             st.markdown("#### 🗺️ Available Pathways:")
             for p in q.pathways:
-                st.markdown(f"- **{p.title}** ({p.location}): {p.description}")
+                st.markdown(f"- **{p.title}** (*{p.location}*): {p.description}")
 
-    # TAB 4: ACTIVE CHALLENGE (Playable Puzzles)
-    with tabs[3]:
-        st.subheader("🧩 Ancient Runic Challenges")
-        st.caption("Interact with the mechanisms of Elarion using structured actions. Observe how logic dictates the outcome.")
+        st.markdown("---")
+        st.markdown("### 🕊️ Character Memories & Rapport")
+        mems = engine.state_mgr.storage.get_character_memories(player_dict.get("id", "player_default"))
+        if not mems:
+            st.info("No recorded memories yet. As you interact with Mira, Sylvan, and Thorne, your deeds will be remembered.")
+        else:
+            for m in mems:
+                st.markdown(f"- **{m.get('npc_name')}:** {m.get('event_summary')}")
 
-        puz_choice = st.selectbox(
-            "Select Challenge to Attempt:",
-            [
-                ("puzzle_sequence_guardian", "Stage 1: Clockwork Guardian (Sequence)"),
-                ("puzzle_conditional_door", "Stage 2: Sylvan Runic Gateway (Conditions)"),
-                ("puzzle_loop_tiles", "Stage 3: Resonating Conduits of Five (Loops)")
-            ],
-            format_func=lambda x: x[1]
-        )
-        puz_id = puz_choice[0]
-        puzzle = engine.learning_engine.get_puzzle(puz_id)
+    # VIEW 5: MULTI-AGENT TELEMETRY (PART 7)
+    elif st.session_state.active_view == "agents":
+        st.subheader("🤖 CrewAI Multi-Agent Architecture")
+        st.caption("MythCode uses six specialized agents coordinated with conditional execution and fallback safety.")
 
-        if puzzle:
-            st.markdown(f"### {puzzle.title}")
-            st.write(puzzle.description)
+        st.markdown("""
+        1. **Director Agent:** Interprets actions, aligns quest objectives, and routes story beats.
+        2. **Player Insight Agent:** Maintains bounded, evidence-based cognitive & mastery estimates.
+        3. **Story Weaver Agent:** Generates evolving prose, dialogue, and choices (with Gemini enrichment).
+        4. **World Keeper Agent:** Enforces physical laws, location continuity, and resource clamps.
+        5. **Logic & Learning Agent:** Evaluates puzzles deterministically and unlocks Python concepts.
+        6. **Continuity & Safety Agent:** Audits content for age appropriateness and state validity.
+        """)
 
-            # Puzzle 1: Sequence
-            if puz_id == "puzzle_sequence_guardian":
-                st.info("Assemble the exact sequence of 4 movement commands to guide the guardian to the altar.")
-                col_btn1, col_btn2, col_btn3, col_clear = st.columns(4)
-                with col_btn1:
-                    if st.button("⬆️ FORWARD"):
-                        st.session_state.selected_seq_steps.append("FORWARD")
-                with col_btn2:
-                    if st.button("➡️ TURN RIGHT"):
-                        st.session_state.selected_seq_steps.append("TURN_RIGHT")
-                with col_btn3:
-                    if st.button("⬅️ TURN LEFT"):
-                        st.session_state.selected_seq_steps.append("TURN_LEFT")
-                with col_clear:
-                    if st.button("🧹 Clear Steps"):
-                        st.session_state.selected_seq_steps = []
+        st.markdown("#### Recent Multi-Agent Execution Telemetry:")
+        if st.session_state.last_telemetry:
+            for t in st.session_state.last_telemetry:
+                st.markdown(f"""
+                <div class="telemetry-card">
+                    <strong style="color: #4A3525;">{t.get('agent')}:</strong> {t.get('output')}
+                </div>
+                """, unsafe_allow_html=True)
+        else:
+            st.info("Take an action in the Story Scene to observe live agent telemetry.")
 
-                st.write(f"**Current Program Sequence:** `{' ➔ '.join(st.session_state.selected_seq_steps) if st.session_state.selected_seq_steps else 'Empty'}`")
+    # VIEW 6: BACKUP & RESTORE (PART 13)
+    elif st.session_state.active_view == "backup":
+        st.subheader("💾 Backup & Restore Game Data")
+        st.caption("Because Streamlit Community Cloud storage can be ephemeral, export your progress as a JSON backup!")
 
-                if st.button("⚡ Execute Program Sequence", type="primary"):
-                    res = engine.solve_challenge(puz_id, st.session_state.selected_seq_steps)
-                    st.session_state.active_scene = res["scene"]
-                    st.session_state.last_telemetry = res.get("telemetry", [])
-                    st.session_state.puzzle_feedback = res.get("puzzle_feedback")
-                    st.session_state.unlocked_code = res.get("revealed_code")
-                    st.rerun()
+        col_b1, col_b2 = st.columns(2)
+        with col_b1:
+            st.markdown("#### Export Progress")
+            backup_str = engine.export_backup()
+            st.download_button(
+                label="📥 Download Game Backup (.json)",
+                data=backup_str,
+                file_name="mythcode_save_backup.json",
+                mime="application/json",
+                use_container_width=True
+            )
+            with st.expander("View Raw Backup JSON"):
+                st.code(backup_str, language="json")
 
-            # Puzzle 2: Conditions
-            elif puz_id == "puzzle_conditional_door":
-                options = puzzle.available_options or []
-                selected_opt = st.radio(
-                    "Evaluate Condition for the Runic Portal:",
-                    options,
-                    format_func=lambda opt: opt["label"]
-                )
-                if st.button("✨ Evaluate Condition", type="primary"):
-                    res = engine.solve_challenge(puz_id, selected_opt["id"])
-                    st.session_state.active_scene = res["scene"]
-                    st.session_state.last_telemetry = res.get("telemetry", [])
-                    st.session_state.puzzle_feedback = res.get("puzzle_feedback")
-                    st.session_state.unlocked_code = res.get("revealed_code")
-                    st.rerun()
-
-            # Puzzle 3: Loops
-            elif puz_id == "puzzle_loop_tiles":
-                loop_action = st.radio(
-                    "Choose Energy Channeling Strategy:",
-                    [
-                        ("LOOP_5_STEPS", "🔁 Channel a 5-step repetitive loop across all tiles (for step in range(5))"),
-                        ("STEP_ONCE_AND_STOP", "⚡ Send a single solitary pulse into tile 1 only"),
-                        ("RANDOM_JUMP", "🎲 Emit random erratic pulses")
-                    ],
-                    format_func=lambda x: x[1]
-                )
-                if st.button("🌀 Activate Conduit Loop", type="primary"):
-                    res = engine.solve_challenge(puz_id, loop_action[0])
-                    st.session_state.active_scene = res["scene"]
-                    st.session_state.last_telemetry = res.get("telemetry", [])
-                    st.session_state.puzzle_feedback = res.get("puzzle_feedback")
-                    st.session_state.unlocked_code = res.get("revealed_code")
-                    st.rerun()
-
-            # Pedagogical Hint button
-            if st.button("💡 Consult the Arcane Archives for a Hint"):
-                hint_data = engine.get_hint(puz_id)
-                st.info(f"**Hint:** {hint_data['hint']}")
+        with col_b2:
+            st.markdown("#### Restore Progress")
+            uploaded_file = st.file_uploader("Upload Saved Backup (.json)", type=["json"])
+            if uploaded_file is not None:
+                content = uploaded_file.read().decode("utf-8")
+                if st.button("🔄 Restore from File", type="primary", use_container_width=True):
+                    ok = engine.import_backup(content)
+                    if ok:
+                        st.success("Successfully restored your saved adventure!")
+                        st.session_state.active_view = "adventure"
+                        st.rerun()
+                    else:
+                        st.error("Failed to restore backup. Please verify the JSON file.")
