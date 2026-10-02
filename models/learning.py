@@ -1,14 +1,18 @@
 """
-Learning models, puzzle specifications, and code reveal structures.
+Learning models, puzzle specifications, and The Codex of Becoming.
+Tracks Discoveries, Masteries, and Player Craft.
 """
 from dataclasses import dataclass, field, asdict
 from typing import List, Dict, Any, Optional
+import time
 
 @dataclass
 class PythonConceptReveal:
     concept_name: str
+    fantasy_name: str
     explanation: str
     code_snippet: str
+    practice_challenge: str = ""
 
     def to_dict(self) -> Dict[str, Any]:
         return asdict(self)
@@ -39,7 +43,13 @@ class PuzzleChallenge:
     def from_dict(cls, data: Dict[str, Any]) -> "PuzzleChallenge":
         reveal_data = data.get("python_reveal", {})
         if isinstance(reveal_data, dict):
-            reveal = PythonConceptReveal(**reveal_data)
+            reveal = PythonConceptReveal(
+                concept_name=reveal_data.get("concept_name", ""),
+                fantasy_name=reveal_data.get("fantasy_name", reveal_data.get("concept_name", "")),
+                explanation=reveal_data.get("explanation", ""),
+                code_snippet=reveal_data.get("code_snippet", ""),
+                practice_challenge=reveal_data.get("practice_challenge", "Try changing parameters to see how behavior responds.")
+            )
         else:
             reveal = reveal_data
         return cls(
@@ -59,10 +69,26 @@ class PuzzleChallenge:
         )
 
 @dataclass
+class CodexEntry:
+    id: str
+    category: str  # "discovery", "mastery", "craft"
+    concept: str
+    title: str
+    fantasy_lore: str
+    programming_concept: str
+    code_example: str
+    mastery_status: str  # "In Progress", "Mastered"
+    unlocked_at: float = field(default_factory=time.time)
+
+    def to_dict(self) -> Dict[str, Any]:
+        return asdict(self)
+
+@dataclass
 class LearningProgress:
     concepts_encountered: List[str] = field(default_factory=list)
     completed_puzzles: List[str] = field(default_factory=list)
     unlocked_reveals: List[Dict[str, Any]] = field(default_factory=list)
+    codex_entries: List[Dict[str, Any]] = field(default_factory=list)
     attempts: Dict[str, int] = field(default_factory=dict)
     hint_uses: Dict[str, int] = field(default_factory=dict)
 
@@ -77,6 +103,7 @@ class LearningProgress:
             concepts_encountered=list(data.get("concepts_encountered", [])),
             completed_puzzles=list(data.get("completed_puzzles", [])),
             unlocked_reveals=list(data.get("unlocked_reveals", [])),
+            codex_entries=list(data.get("codex_entries", [])),
             attempts=dict(data.get("attempts", {})),
             hint_uses=dict(data.get("hint_uses", {}))
         )
