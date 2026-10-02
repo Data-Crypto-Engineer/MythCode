@@ -22,9 +22,9 @@ class GameEngine:
         self.learning_engine = LearningEngine()
         self.crew = MythWeaverCrew(db_path)
 
-    def initialize_session(self, name: str = "Aria", role: str = "Clockwork Scholar", style: str = "Analytical"):
+    def initialize_session(self, **kwargs):
         """Initializes or loads a persistent session for the player."""
-        profile = self.state_mgr.load_or_init_player(name, role, style)
+        profile = self.state_mgr.load_or_init_player(**kwargs)
         world = self.state_mgr.load_or_init_world()
         learning = self.state_mgr.load_or_init_learning()
         logger.info(f"Initialized session for '{profile.name}' ({profile.role}) in {world.kingdom}")
@@ -34,6 +34,14 @@ class GameEngine:
             "learning": learning.to_dict(),
             "quests": [q.to_dict() for q in self.quest_mgr.get_all_quests()]
         }
+
+    def export_backup(self) -> str:
+        """Returns JSON backup of game state."""
+        return self.state_mgr.storage.export_backup_json(self.player_id)
+
+    def import_backup(self, json_data: str) -> bool:
+        """Imports and restores game state from JSON backup."""
+        return self.state_mgr.storage.import_backup_json(self.player_id, json_data)
 
     def execute_action(self, action_text: str, action_type: str = "exploration") -> Dict[str, Any]:
         """Dispatches an exploratory or narrative action through the multi-agent pipeline."""
