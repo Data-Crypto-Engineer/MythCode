@@ -43,12 +43,13 @@ class GameEngine:
         """Imports and restores game state from JSON backup."""
         return self.state_mgr.storage.import_backup_json(self.player_id, json_data)
 
-    def execute_action(self, action_text: str, action_type: str = "exploration") -> Dict[str, Any]:
+    def execute_action(self, action_text: str, action_type: str = "exploration", action_id: Optional[str] = None) -> Dict[str, Any]:
         """Dispatches an exploratory or narrative action through the multi-agent pipeline."""
         return self.crew.process_player_action(
             player_id=self.player_id,
             action_text=action_text,
-            action_type=action_type
+            action_type=action_type,
+            action_id=action_id
         )
 
     def solve_challenge(self, puzzle_id: str, submission: Any) -> Dict[str, Any]:
