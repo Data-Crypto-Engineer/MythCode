@@ -20,7 +20,7 @@ class GeminiStoryteller:
     def __init__(self):
         self.config = get_app_config()
         self.api_key = self.config.get("api_key") or os.getenv("GEMINI_API_KEY", "")
-        self.model = os.getenv("GEMINI_MODEL", "gemini-1.5-flash")
+        self.model = os.getenv("GEMINI_MODEL", "gemini-3.8-flash")
 
     @property
     def is_available(self) -> bool:
@@ -36,44 +36,65 @@ class GeminiStoryteller:
         recent_action: str
     ) -> Dict[str, Any]:
         """
-        Attempts to enrich the scene description and dialogue using Gemini.
-        Returns base_scene untouched if API is missing or fails.
+        Enriches narrative prose and dialogue using Gemini strictly grounded in structured facts.
+        Gemini receives structured world & player facts and creates narrative around them.
+        The deterministic game state is authoritative — Gemini never invents state or changes reality.
         """
         if not self.is_available:
             return base_scene
 
-        prompt = f"""You are the master narrator and character voice of MythCode, an enchanted fantasy adventure in the realm of Elarion.
-The player has just taken the following action: "{recent_action}".
+        speaker = base_scene.get('speaker', 'Narrator')
+        speaker_simple = speaker.split()[0] if speaker else "Narrator"
+        npc_relationships = world_state.get('npc_relationships', {})
+        speaker_rel = npc_relationships.get(speaker_simple, "neutral")
 
-Player Context:
-- Name: {player_profile.get('name', 'Aria')} ({player_profile.get('pronouns', 'they/them')})
-- Fantasy Calling: {player_profile.get('role', 'Rune Engineer')}
-- Appearance: {player_profile.get('appearance', 'Inquisitive scholar')}
-- Hair: {player_profile.get('hair_style', 'Braided crown')} in {player_profile.get('hair_color', 'Auburn')}
-- Attire: {player_profile.get('outfit', 'Leather scholar coat')}
-- Personality: {player_profile.get('personality', 'Curious & Patient')}
-- Magical Affinity: {player_profile.get('magical_affinity', 'Arcane')}
-- Companion Familiar: {player_profile.get('companion', 'Clockwork Owl')}
-- Keepsake: {player_profile.get('keepsake', 'Brass Chrono-Gear')}
-- Learning Approach: {player_profile.get('learning_style', 'Hands-on Experimentation')}
+        # Format persistent memories (bullet points)
+        p_mems = world_state.get('persistent_memories', [])
+        persistent_mems_summary = [m.get("summary") for m in p_mems[-4:]] if p_mems else []
+        if not persistent_mems_summary and character_memories:
+            persistent_mems_summary = [m.get("event_summary") for m in character_memories[:3]]
 
-World Context:
-- Location: {world_state.get('current_location', 'Whispering Village')}
-- Water Supply: {world_state.get('water_supply', 'damaged')}
-- Clockwork Guardian: {world_state.get('clockwork_guardian', 'inactive')}
-- Forest Spirit Trust: {world_state.get('forest_spirit_trust', 0)}/10
-- Village Morale: {world_state.get('village_morale', 60)}%
+        prompt = f"""You are the narrative stylist for MythCode, an enchanted fantasy adventure.
+Your role is to craft atmospheric wording and dialogue around the following AUTHORITATIVE FACTS.
+The deterministic facts below are absolute law. You MUST NOT contradict them or invent persistent state, items, or quests.
 
-Speaker: {base_scene.get('speaker', 'Elder Thorne')}
-Relevant Character Memories: {[m.get('event_summary') for m in character_memories[:2]]}
+[STRUCTURED FACTS]
+PLAYER:
+* name = {player_profile.get('name', 'Aria')} ({player_profile.get('pronouns', 'they/them')})
+* role = {player_profile.get('role', 'Rune Engineer')}
+* companion = {player_profile.get('companion', 'Clockwork Owl')}
+* affinity = {player_profile.get('magical_affinity', 'Arcane')}
+* keepsake = {player_profile.get('keepsake', 'Brass Chrono-Gear')}
+* personality = {player_profile.get('personality', 'Curious & Patient')}
 
-Please provide an enriched response in valid JSON matching this schema:
+WORLD:
+* current location = {world_state.get('current_location', 'Whispering Village')}
+* water supply = {world_state.get('water_supply', 'damaged')} (springs restored: {world_state.get('water_supply') == 'restored'})
+* clockwork guardian = {world_state.get('clockwork_guardian', 'inactive')}
+* village morale = {world_state.get('village_morale', 60)}%
+* forest spirit trust = {world_state.get('forest_spirit_trust', 0)}/10
+* persistent memories = {persistent_mems_summary}
+
+NPC CONTEXT:
+* speaker = {speaker}
+* relationship = {speaker_rel}
+
+SHORT-TERM CONTEXT:
+* recent action = "{recent_action}"
+* scene beat = "{base_scene.get('scene_title')}"
+
+RULES:
+1. Ground your dialogue strictly in the relationship and memory. If relationship='helped', the NPC MUST acknowledge that the player helped them.
+2. If water is restored, the environment MUST be vibrant with flowing springs; do not describe dry fountains.
+3. Keep scene description to 2-3 atmospheric, storybook sentences.
+4. Keep dialogue to 1-2 authentic character sentences addressing the player.
+5. Do NOT invent new items, skills, or quest completions not listed in the facts.
+
+Respond ONLY with valid JSON:
 {{
-  "scene_description": "2-3 sentences of atmospheric, storybook description reflecting their action and affinity",
-  "dialogue": "In-character dialogue from the speaker addressing the player and mentioning their companion or keepsake when fitting"
-}}
-
-Respond ONLY with valid JSON. Do not include markdown codeblocks or extra text."""
+  "scene_description": "2-3 sentences of atmospheric prose reflecting the established facts",
+  "dialogue": "1-2 sentences of authentic dialogue from {speaker} reflecting relationship and memories"
+}}"""
 
         try:
             url = f"https://generativelanguage.googleapis.com/v1beta/models/{self.model}:generateContent?key={self.api_key}"
