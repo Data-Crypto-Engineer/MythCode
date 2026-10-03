@@ -8,6 +8,7 @@ import time
 from core.game_engine import GameEngine
 from utils.config import get_app_config
 from utils.cloudflare_images import get_image_service
+from utils.character_visuals import generate_protagonist_svg
 
 # 1. Page Configuration
 st.set_page_config(
@@ -44,26 +45,92 @@ st.markdown("""
         background: linear-gradient(135deg, #FFFDF9 0%, #F5ECE0 55%, #EFE1D0 100%);
         border: 2px solid #D7B978;
         border-radius: 16px;
-        padding: 2.2rem 2.4rem;
+        padding: 2rem 2.2rem;
         text-align: center;
-        margin-bottom: 2rem;
+        margin-bottom: 1.8rem;
         box-shadow: 0 6px 24px rgba(74, 53, 37, 0.08);
     }
 
     .storybook-title {
-        font-size: 2.8rem;
+        font-size: 2.6rem;
         font-family: 'Cinzel', serif;
         color: #4A3525;
         font-weight: 800;
-        margin-bottom: 0.3rem;
+        margin-bottom: 0.2rem;
         letter-spacing: 0.05em;
     }
 
     .storybook-subtitle {
         font-style: italic;
         color: #6B7A60;
-        font-size: 1.25rem;
+        font-size: 1.2rem;
+        margin-bottom: 0.6rem;
+    }
+
+    /* Character Creation Stanza Container */
+    .stanza-card {
+        background: #FFFFFF;
+        border: 1px solid #E2D5C3;
+        border-left: 6px solid #8A72B8;
+        border-radius: 14px;
+        padding: 2rem;
+        margin-bottom: 1.4rem;
+        box-shadow: 0 4px 18px rgba(70, 50, 30, 0.06);
+    }
+
+    .stanza-step-indicator {
+        font-family: 'Cinzel', serif;
+        font-size: 0.88rem;
+        text-transform: uppercase;
+        letter-spacing: 0.12em;
+        color: #8A72B8;
+        font-weight: 700;
+        margin-bottom: 0.5rem;
+    }
+
+    .stanza-lore-quote {
+        font-style: italic;
+        color: #5C4033;
+        font-size: 1.15rem;
+        border-left: 3px solid #D7B978;
+        padding-left: 1rem;
+        margin: 0.8rem 0 1.4rem 0;
+    }
+
+    /* Living Protagonist Folio (Right Side Preview) */
+    .living-folio-card {
+        background: linear-gradient(145deg, #FFFDF9 0%, #FAF6EE 100%);
+        border: 2px solid #D7B978;
+        border-radius: 16px;
+        padding: 1.6rem;
+        text-align: center;
+        box-shadow: 0 6px 20px rgba(74, 53, 37, 0.08);
+    }
+
+    .folio-title {
+        font-family: 'Cinzel', serif;
+        font-size: 1.35rem;
+        font-weight: 700;
+        color: #4A3525;
+        margin-bottom: 0.2rem;
+    }
+
+    .folio-subtitle {
+        font-size: 0.95rem;
+        color: #7B8F72;
+        font-weight: 600;
         margin-bottom: 0.8rem;
+    }
+
+    .folio-field-box {
+        background: #F4EFE6;
+        border: 1px solid #E2D5C3;
+        border-radius: 8px;
+        padding: 0.5rem 0.8rem;
+        margin: 0.4rem 0;
+        font-size: 0.95rem;
+        text-align: left;
+        color: #382F26;
     }
 
     /* Main Scene Parchment Page */
@@ -191,6 +258,52 @@ if "show_codex" not in st.session_state:
 if "show_backup" not in st.session_state:
     st.session_state.show_backup = False
 
+# Character Creation Wizard State
+if "cc_step" not in st.session_state:
+    st.session_state.cc_step = 1
+
+if "cc_name" not in st.session_state:
+    st.session_state.cc_name = "Aria"
+
+if "cc_pronouns" not in st.session_state:
+    st.session_state.cc_pronouns = "they/them"
+
+if "cc_demeanor" not in st.session_state:
+    st.session_state.cc_demeanor = "Scholarly & contemplative, observing the world with keen curiosity"
+
+if "cc_complexion" not in st.session_state:
+    st.session_state.cc_complexion = "Sun-kissed bronze"
+
+if "cc_gaze" not in st.session_state:
+    st.session_state.cc_gaze = "Amber gold"
+
+if "cc_hair_style" not in st.session_state:
+    st.session_state.cc_hair_style = "Braided Crown"
+
+if "cc_hair_color" not in st.session_state:
+    st.session_state.cc_hair_color = "Auburn"
+
+if "cc_outfit" not in st.session_state:
+    st.session_state.cc_outfit = "Leather Scholar Coat"
+
+if "cc_role" not in st.session_state:
+    st.session_state.cc_role = "Rune Engineer"
+
+if "cc_personality" not in st.session_state:
+    st.session_state.cc_personality = "Curious & Patient"
+
+if "cc_affinity" not in st.session_state:
+    st.session_state.cc_affinity = "Arcane"
+
+if "cc_learning_style" not in st.session_state:
+    st.session_state.cc_learning_style = "Hands-on Experimentation"
+
+if "cc_companion" not in st.session_state:
+    st.session_state.cc_companion = "Clockwork Owl"
+
+if "cc_keepsake" not in st.session_state:
+    st.session_state.cc_keepsake = "Brass Chrono-Gear"
+
 engine: GameEngine = st.session_state.game_engine
 image_service = get_image_service()
 config = get_app_config()
@@ -221,33 +334,6 @@ def safe_initialize_session(eng: GameEngine, **kwargs):
         except TypeError:
             return eng.initialize_session()
 
-# Helper: Generate clean avatar SVG
-def get_character_portrait_svg(affinity: str, hair_color: str) -> str:
-    color_map = {
-        "Nature": "#7B8F72", "Light": "#E0C870", "Water": "#6EA8B8",
-        "Fire": "#C96D57", "Wind": "#92B8A0", "Arcane": "#8A72B8"
-    }
-    aura = color_map.get(affinity, "#8A72B8")
-    hair_map = {
-        "Auburn": "#8B4513", "Silver": "#A8A8A8", "Midnight Black": "#202020",
-        "Golden": "#DAA520", "Emerald": "#2E8B57"
-    }
-    h_col = hair_map.get(hair_color, "#8B4513")
-    return f"""
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 140 140" width="100%" height="100%">
-        <circle cx="70" cy="70" r="66" fill="#FAF6EE" stroke="{aura}" stroke-width="4" />
-        <circle cx="70" cy="70" r="58" fill="none" stroke="{aura}" stroke-width="1.5" stroke-dasharray="3,3" opacity="0.6" />
-        <path d="M30,130 C40,102 100,102 110,130 Z" fill="{aura}" opacity="0.85" />
-        <circle cx="70" cy="60" r="25" fill="#FADBC8" />
-        <path d="M45,56 C45,36 95,36 95,56 C95,42 45,42 45,56 Z" fill="{h_col}" />
-        <circle cx="62" cy="59" r="2.5" fill="#362E3B" />
-        <circle cx="78" cy="59" r="2.5" fill="#362E3B" />
-        <path d="M66,69 Q70,72 74,69" stroke="#362E3B" stroke-width="1.5" fill="none" />
-        <circle cx="106" cy="106" r="14" fill="#FFFFFF" stroke="#D7B978" stroke-width="2" />
-        <text x="106" y="111" font-size="12" text-anchor="middle">✨</text>
-    </svg>
-    """
-
 # 4. Sidebar: Realm Status & Character Presence
 with st.sidebar:
     st.markdown("### 🏰 Kingdom of Elarion")
@@ -256,6 +342,19 @@ with st.sidebar:
     learning_dict = engine.state_mgr.load_or_init_learning().to_dict()
 
     if st.session_state.game_started:
+        sidebar_svg = generate_protagonist_svg(
+            name=player_dict.get('name', 'Aria'),
+            role=player_dict.get('role', 'Rune Engineer'),
+            affinity=player_dict.get('magical_affinity', 'Arcane'),
+            hair_style=player_dict.get('hair_style', 'Braided Crown'),
+            hair_color=player_dict.get('hair_color', 'Auburn'),
+            outfit=player_dict.get('outfit', 'Leather Scholar Coat'),
+            companion=player_dict.get('companion', 'Clockwork Owl'),
+            keepsake=player_dict.get('keepsake', 'Brass Chrono-Gear'),
+            size=140
+        )
+        st.components.v1.html(sidebar_svg, height=160)
+
         st.markdown(f"""
         <div class="hero-badge">
             <div style="font-size: 1.3rem; font-weight: 700; color: #4A3525; font-family: 'Cinzel', serif;">
@@ -306,81 +405,370 @@ with st.sidebar:
             st.session_state.puzzle_solved_flag = False
             st.session_state.show_codex = False
             st.session_state.show_backup = False
+            st.session_state.cc_step = 1
             st.rerun()
 
     else:
-        st.info("Chronicle your hero to embark upon Chapter I: The Silence of the Springs.")
+        st.info("Inscribe your protagonist's chronicle to embark upon Chapter I: The Silence of the Springs.")
 
-# ================= CHAPTER I: CHARACTER CHRONICLE =================
+# ================= CHAPTER 0: STAGED STORYBOOK CHARACTER CREATION =================
 if not st.session_state.game_started:
     st.markdown("""
     <div class="storybook-header">
         <div class="storybook-title">✨ MYTHCODE ✨</div>
-        <div class="storybook-subtitle">"Every spell is a program. Every decision changes the world."</div>
+        <div class="storybook-subtitle">"Every spell is a program. Every decision shapes the realm."</div>
         <p style="color: #4A3525; max-width: 720px; margin: 0 auto; font-size: 1.15rem;">
-            Welcome to the Kingdom of Elarion. Its ancient mountain springs have gone quiet, and mysterious
-            clockwork mechanisms await instruction. Through exploration, dialogue, and runic puzzle-solving,
-            you will discover the foundational laws of computation through the living magic of the world.
+            Before your footsteps sound upon the cobblestones of Whispering Village,
+            the ancient chroniclers of Elarion must inscribe who you are into the living ledger.
         </p>
     </div>
     """, unsafe_allow_html=True)
 
-    st.markdown("### 📜 Chronicle Your Hero")
-    col_c1, col_c2 = st.columns([1.3, 0.7])
+    # Staged navigation badges
+    steps_meta = [
+        (1, "Name"),
+        (2, "Bearing"),
+        (3, "Style"),
+        (4, "Nature"),
+        (5, "Companion"),
+        (6, "Keepsake"),
+        (7, "Chronicle")
+    ]
+    st_cols = st.columns(len(steps_meta))
+    for s_idx, (num, label) in enumerate(steps_meta):
+        with st_cols[s_idx]:
+            is_active = (st.session_state.cc_step == num)
+            btn_prefix = "🌟 " if is_active else ""
+            if st.button(f"{btn_prefix}{num}. {label}", key=f"nav_step_{num}", use_container_width=True):
+                st.session_state.cc_step = num
+                st.rerun()
 
-    with col_c1:
-        c1, c2 = st.columns(2)
-        with c1:
-            hero_name = st.text_input("Hero Name", value="Aria", max_chars=30)
-            hero_role = st.selectbox(
-                "Fantasy Calling",
-                ["Rune Engineer", "Spellweaver", "Forest Guardian", "Star Cartographer", "Alchemist", "Shadow Explorer"]
-            )
-            hero_affinity = st.selectbox(
-                "Primary Magical Affinity",
-                ["Arcane", "Nature", "Water", "Light", "Fire", "Wind"]
-            )
+    st.markdown("<div style='height: 0.8rem;'></div>", unsafe_allow_html=True)
 
-        with c2:
-            hero_companion = st.selectbox(
-                "Familiar Companion",
-                ["Clockwork Owl", "Sylvan Sprite", "Runestone Fox", "Ember Salamander", "Zephyr Finch"]
-            )
-            hero_keepsake = st.selectbox(
-                "Starting Keepsake",
-                ["Brass Chrono-Gear", "Dried Star-Blossom", "River Prism", "Carved Rune-Tablet", "Alchemical Vial"]
-            )
-            hero_hair = st.selectbox("Hair Color", ["Auburn", "Silver", "Midnight Black", "Golden", "Emerald"])
+    col_wizard, col_preview = st.columns([1.35, 0.65])
 
-        hero_pronouns = st.selectbox("Pronouns", ["they/them", "she/her", "he/him", "ze/zir", "custom"])
+    # --- LEFT COLUMN: STAGED CREATION STANZA ---
+    with col_wizard:
+        # STEP 1: Your Name
+        if st.session_state.cc_step == 1:
+            st.markdown("""
+            <div class="stanza-card">
+                <div class="stanza-step-indicator">Stanza I &bull; The Name Upon the Ledger</div>
+                <h2 style="margin-top: 0; color: #4A3525;">What shall the realms call you?</h2>
+                <div class="stanza-lore-quote">
+                    "A name is the primary handle of existence—the first variable declared before any spell can weave reality."
+                </div>
+            </div>
+            """, unsafe_allow_html=True)
 
-        if st.button("🌟 Embark Into Whispering Village", type="primary", use_container_width=True):
-            safe_initialize_session(
-                engine,
-                name=hero_name,
-                pronouns=hero_pronouns,
-                role=hero_role,
-                magical_affinity=hero_affinity,
-                companion=hero_companion,
-                keepsake=hero_keepsake,
-                hair_color=hero_hair
-            )
-            # Initial arrival into Chapter 1
-            res = safe_execute_action(
-                engine,
-                f"{hero_name} arrives in Whispering Village to investigate the silent springs.",
-                action_id="examine_fountain"
-            )
-            st.session_state.active_scene = res["scene"]
-            st.session_state.last_action_feedback = f"You arrive at Whispering Village as the morning mist parts. The central fountain is eerily silent."
-            st.session_state.game_started = True
-            st.rerun()
+            c1, c2 = st.columns([1.4, 0.8])
+            with c1:
+                name_in = st.text_input("Protagonist Name", value=st.session_state.cc_name, max_chars=30)
+                st.session_state.cc_name = name_in.strip() or "Aria"
+            with c2:
+                pronoun_options = ["they/them", "she/her", "he/him", "ze/zir", "it/its"]
+                p_idx = pronoun_options.index(st.session_state.cc_pronouns) if st.session_state.cc_pronouns in pronoun_options else 0
+                pronouns_in = st.selectbox("How the elders speak of you", pronoun_options, index=p_idx)
+                st.session_state.cc_pronouns = pronouns_in
 
-    with col_c2:
-        st.markdown("#### Hero Portrait Preview")
-        portrait_html = get_character_portrait_svg(hero_affinity, hero_hair)
-        st.components.v1.html(portrait_html, height=160)
-        st.caption(f"**{hero_name}** the *{hero_role}*, attuned to **{hero_affinity}** arcana, accompanied by a loyal **{hero_companion}**.")
+            st.caption("Villagers, mentors, and forest spirits will address you by this name throughout your travels.")
+
+        # STEP 2: Your Appearance
+        elif st.session_state.cc_step == 2:
+            st.markdown("""
+            <div class="stanza-card">
+                <div class="stanza-step-indicator">Stanza II &bull; Demeanor & Bearing</div>
+                <h2 style="margin-top: 0; color: #4A3525;">How do you walk the world?</h2>
+                <div class="stanza-lore-quote">
+                    "When the morning mist parts over Whispering Village, the villagers will look first upon your gaze and your bearing."
+                </div>
+            </div>
+            """, unsafe_allow_html=True)
+
+            demeanor_options = [
+                "Scholarly & contemplative, observing the world with keen curiosity",
+                "Sturdy & grounded, weathered by mountain travels and stone quarries",
+                "Nimble & poised, moving with quiet grace like forest leaves",
+                "Warm & welcoming, carrying the light of kinship wherever you tread",
+                "Sharp & alert, ever vigilant of shifts in the wind"
+            ]
+            d_idx = demeanor_options.index(st.session_state.cc_demeanor) if st.session_state.cc_demeanor in demeanor_options else 0
+            st.session_state.cc_demeanor = st.selectbox("Demeanor & Bearing", demeanor_options, index=d_idx)
+
+            col_app1, col_app2 = st.columns(2)
+            with col_app1:
+                gaze_options = [
+                    "Amber gold",
+                    "Deep river blue",
+                    "Forest emerald",
+                    "Obsidian dark",
+                    "Amethyst violet"
+                ]
+                g_idx = gaze_options.index(st.session_state.cc_gaze) if st.session_state.cc_gaze in gaze_options else 0
+                st.session_state.cc_gaze = st.selectbox("Eye Gaze", gaze_options, index=g_idx)
+
+            with col_app2:
+                complexion_options = [
+                    "Sun-kissed bronze",
+                    "Pale alabaster",
+                    "Warm mahogany",
+                    "Fair with rosy flush",
+                    "Golden olive"
+                ]
+                c_idx = complexion_options.index(st.session_state.cc_complexion) if st.session_state.cc_complexion in complexion_options else 0
+                st.session_state.cc_complexion = st.selectbox("Complexion & Skin Tone", complexion_options, index=c_idx)
+
+        # STEP 3: Your Style
+        elif st.session_state.cc_step == 3:
+            st.markdown("""
+            <div class="stanza-card">
+                <div class="stanza-step-indicator">Stanza III &bull; Style & Attire</div>
+                <h2 style="margin-top: 0; color: #4A3525;">Your Style and Traveling Garb</h2>
+                <div class="stanza-lore-quote">
+                    "A practitioner's attire tells tales of their discipline—whether forged in brass workshops or woven from celestial silk."
+                </div>
+            </div>
+            """, unsafe_allow_html=True)
+
+            col_s1, col_s2 = st.columns(2)
+            with col_s1:
+                hair_style_options = [
+                    "Braided Crown",
+                    "Windswept Locks",
+                    "Sleek Scholar Bob",
+                    "Flowing Curls",
+                    "Practical Cropped"
+                ]
+                hs_idx = hair_style_options.index(st.session_state.cc_hair_style) if st.session_state.cc_hair_style in hair_style_options else 0
+                st.session_state.cc_hair_style = st.selectbox("Hair Style", hair_style_options, index=hs_idx)
+
+                hair_color_options = [
+                    "Auburn",
+                    "Silver",
+                    "Midnight Black",
+                    "Golden",
+                    "Emerald",
+                    "Copper Crimson"
+                ]
+                hc_idx = hair_color_options.index(st.session_state.cc_hair_color) if st.session_state.cc_hair_color in hair_color_options else 0
+                st.session_state.cc_hair_color = st.selectbox("Hair Color", hair_color_options, index=hc_idx)
+
+            with col_s2:
+                outfit_options = [
+                    "Leather Scholar Coat",
+                    "Traveler's Cloak",
+                    "Tinkerer's Vest",
+                    "Celestial Silk Tunic",
+                    "Scout's Tunic"
+                ]
+                out_idx = outfit_options.index(st.session_state.cc_outfit) if st.session_state.cc_outfit in outfit_options else 0
+                st.session_state.cc_outfit = st.selectbox("Traveling Attire", outfit_options, index=out_idx)
+
+        # STEP 4: Your Nature
+        elif st.session_state.cc_step == 4:
+            st.markdown("""
+            <div class="stanza-card">
+                <div class="stanza-step-indicator">Stanza IV &bull; Nature, Calling & Affinity</div>
+                <h2 style="margin-top: 0; color: #4A3525;">What is your nature and magical calling?</h2>
+                <div class="stanza-lore-quote">
+                    "Magic in Elarion obeys ancient computational laws. Your calling determines your approach to problem-solving."
+                </div>
+            </div>
+            """, unsafe_allow_html=True)
+
+            col_n1, col_n2 = st.columns(2)
+            with col_n1:
+                role_options = [
+                    "Rune Engineer",
+                    "Spellweaver",
+                    "Forest Guardian",
+                    "Star Cartographer",
+                    "Alchemist",
+                    "Shadow Explorer"
+                ]
+                r_idx = role_options.index(st.session_state.cc_role) if st.session_state.cc_role in role_options else 0
+                st.session_state.cc_role = st.selectbox("Fantasy Calling", role_options, index=r_idx)
+
+                affinity_options = ["Arcane", "Water", "Nature", "Light", "Fire", "Wind"]
+                aff_idx = affinity_options.index(st.session_state.cc_affinity) if st.session_state.cc_affinity in affinity_options else 0
+                st.session_state.cc_affinity = st.selectbox("Primary Magical Affinity", affinity_options, index=aff_idx)
+
+            with col_n2:
+                personality_options = [
+                    "Curious & Patient",
+                    "Bold & Decisive",
+                    "Thoughtful & Quiet",
+                    "Witty & Resourceful",
+                    "Gentle & Protective"
+                ]
+                pers_idx = personality_options.index(st.session_state.cc_personality) if st.session_state.cc_personality in personality_options else 0
+                st.session_state.cc_personality = st.selectbox("Personality Demeanor", personality_options, index=pers_idx)
+
+                learning_options = [
+                    "Hands-on Experimentation",
+                    "Deconstructive Analysis",
+                    "Intuitive Pattern-Hunting",
+                    "Trial & Discovery"
+                ]
+                learn_idx = learning_options.index(st.session_state.cc_learning_style) if st.session_state.cc_learning_style in learning_options else 0
+                st.session_state.cc_learning_style = st.selectbox("Learning Disposition", learning_options, index=learn_idx)
+
+        # STEP 5: Your Companion
+        elif st.session_state.cc_step == 5:
+            st.markdown("""
+            <div class="stanza-card">
+                <div class="stanza-step-indicator">Stanza V &bull; The Familiar Bond</div>
+                <h2 style="margin-top: 0; color: #4A3525;">Who accompanies your journey?</h2>
+                <div class="stanza-lore-quote">
+                    "No traveler solves the deep mysteries alone. A faithful familiar perches beside you, offering guidance and companionship."
+                </div>
+            </div>
+            """, unsafe_allow_html=True)
+
+            companion_details = {
+                "Clockwork Owl": "A mechanical familiar forged from copper and brass; tilts its head and whirs rhythmically when runes align.",
+                "Sylvan Sprite": "A playful wisp of emerald leaves that flutters eagerly around problems and hums with ancient forest songs.",
+                "Runestone Fox": "A nimble crimson kit with glowing runic markings along its tail; senses hidden mechanisms beneath stone.",
+                "Ember Salamander": "A warm little lizard with crystalline scales that glow when you solve tricky dilemmas.",
+                "Zephyr Finch": "A swift silver-winged songbird that rides drafts and chirps melodic hints when gears mesh."
+            }
+            comp_names = list(companion_details.keys())
+            c_idx = comp_names.index(st.session_state.cc_companion) if st.session_state.cc_companion in comp_names else 0
+            selected_comp = st.selectbox("Choose Your Familiar", comp_names, index=c_idx)
+            st.session_state.cc_companion = selected_comp
+
+            st.info(f"🐾 **{selected_comp}:** {companion_details[selected_comp]}")
+
+        # STEP 6: Your Keepsake
+        elif st.session_state.cc_step == 6:
+            st.markdown("""
+            <div class="stanza-card">
+                <div class="stanza-step-indicator">Stanza VI &bull; The Cherished Keepsake</div>
+                <h2 style="margin-top: 0; color: #4A3525;">What token do you carry?</h2>
+                <div class="stanza-lore-quote">
+                    "Before leaving your home province, you tucked one object into your pocket. Later in your journey, this keepsake will unlock deep doors."
+                </div>
+            </div>
+            """, unsafe_allow_html=True)
+
+            keepsake_details = {
+                "Brass Chrono-Gear": "A pocket-sized interlocking cog from your mentor's very first water-clock, still ticking softly.",
+                "Dried Star-Blossom": "A celestial flower pressed between parchment pages, glowing with faint luminescent pollen.",
+                "River Prism": "A crystalline pendant that splits sunlight into liquid rainbows; sensitive to water flow.",
+                "Carved Rune-Tablet": "A smooth slate fragment engraved with the ancient symbol of Sequence.",
+                "Alchemical Vial": "A sealed phial containing a swirling droplet of pure mountain springwater."
+            }
+            kp_names = list(keepsake_details.keys())
+            k_idx = kp_names.index(st.session_state.cc_keepsake) if st.session_state.cc_keepsake in kp_names else 0
+            selected_kp = st.selectbox("Choose Your Starting Keepsake", kp_names, index=k_idx)
+            st.session_state.cc_keepsake = selected_kp
+
+            st.success(f"🗝️ **{selected_kp}:** {keepsake_details[selected_kp]}")
+
+        # STEP 7: The Chronicle Sealed (Summary & Embark)
+        elif st.session_state.cc_step == 7:
+            st.markdown("""
+            <div class="stanza-card">
+                <div class="stanza-step-indicator">Stanza VII &bull; The Chronicle is Inscribed</div>
+                <h2 style="margin-top: 0; color: #4A3525;">The Legend Begins</h2>
+                <div class="stanza-lore-quote">
+                    "The ink dries upon the vellum. The mountain winds call toward Whispering Village."
+                </div>
+            </div>
+            """, unsafe_allow_html=True)
+
+            appearance_full = f"{st.session_state.cc_demeanor}. Features: {st.session_state.cc_complexion} skin, {st.session_state.cc_gaze} gaze."
+
+            st.markdown(f"""
+            <div style="background: #FFFDF9; border: 2px solid #D7B978; border-radius: 12px; padding: 1.5rem; margin-bottom: 1.5rem; font-style: italic; font-size: 1.15rem; line-height: 1.8; color: #362E3B;">
+                "Here begins the chronicle of <strong>{st.session_state.cc_name}</strong>, a {st.session_state.cc_role} ({st.session_state.cc_pronouns})
+                adorned in a {st.session_state.cc_outfit} with {st.session_state.cc_hair_style} of {st.session_state.cc_hair_color} hair.
+                Attuned to the <strong>{st.session_state.cc_affinity}</strong> winds and bearing a <strong>{st.session_state.cc_personality}</strong> spirit,
+                they walk with their faithful <strong>{st.session_state.cc_companion}</strong> by their side and a cherished
+                <strong>{st.session_state.cc_keepsake}</strong> tucked safely in their pocket.
+                Today, their journey takes them to the quiet cobblestones of Whispering Village, where the ancient water springs have stopped flowing..."
+            </div>
+            """, unsafe_allow_html=True)
+
+            if st.button("🌟 Inscribe Chronicle & Embark Into Whispering Village", type="primary", use_container_width=True):
+                safe_initialize_session(
+                    engine,
+                    name=st.session_state.cc_name,
+                    pronouns=st.session_state.cc_pronouns,
+                    role=st.session_state.cc_role,
+                    appearance=appearance_full,
+                    hair_style=st.session_state.cc_hair_style,
+                    hair_color=st.session_state.cc_hair_color,
+                    outfit=st.session_state.cc_outfit,
+                    magical_affinity=st.session_state.cc_affinity,
+                    personality=st.session_state.cc_personality,
+                    companion=st.session_state.cc_companion,
+                    learning_style=st.session_state.cc_learning_style,
+                    keepsake=st.session_state.cc_keepsake,
+                    inventory=["Explorer's Journal", st.session_state.cc_keepsake]
+                )
+                res = safe_execute_action(
+                    engine,
+                    f"{st.session_state.cc_name} arrives in Whispering Village to investigate the silent springs.",
+                    action_id="examine_fountain"
+                )
+                st.session_state.active_scene = res["scene"]
+                st.session_state.last_action_feedback = f"You arrive at Whispering Village as the morning mist parts. The central fountain is eerily silent."
+                st.session_state.game_started = True
+                st.rerun()
+
+        # Step Navigation Buttons (Prev / Next)
+        st.markdown("<div style='height: 0.8rem;'></div>", unsafe_allow_html=True)
+        col_nav1, col_nav2 = st.columns([1, 1])
+        with col_nav1:
+            if st.session_state.cc_step > 1:
+                if st.button("⬅️ Previous Stanza", use_container_width=True):
+                    st.session_state.cc_step -= 1
+                    st.rerun()
+
+        with col_nav2:
+            if st.session_state.cc_step < 7:
+                if st.button("Continue Journey ➔", type="primary", use_container_width=True):
+                    st.session_state.cc_step += 1
+                    st.rerun()
+
+    # --- RIGHT COLUMN: LIVING PROTAGONIST FOLIO ---
+    with col_preview:
+        st.markdown("""
+        <div class="living-folio-card">
+            <div class="folio-title">Protagonist's Folio</div>
+            <div class="folio-subtitle">Living Chronicle Preview</div>
+        </div>
+        """, unsafe_allow_html=True)
+
+        # Dynamic SVG vector portrait that reflects current choices in real-time
+        preview_svg = generate_protagonist_svg(
+            name=st.session_state.cc_name,
+            role=st.session_state.cc_role,
+            affinity=st.session_state.cc_affinity,
+            hair_style=st.session_state.cc_hair_style,
+            hair_color=st.session_state.cc_hair_color,
+            outfit=st.session_state.cc_outfit,
+            companion=st.session_state.cc_companion,
+            keepsake=st.session_state.cc_keepsake,
+            complexion=st.session_state.cc_complexion,
+            eye_color=st.session_state.cc_gaze,
+            size=220
+        )
+        st.components.v1.html(preview_svg, height=255)
+
+        st.markdown(f"""
+        <div style="background: #FFFDF9; border: 1px solid #D7B978; border-radius: 10px; padding: 1rem; margin-top: 0.5rem; font-size: 0.95rem;">
+            <div class="folio-field-box"><strong>Hero:</strong> {st.session_state.cc_name} ({st.session_state.cc_pronouns})</div>
+            <div class="folio-field-box"><strong>Calling:</strong> {st.session_state.cc_role}</div>
+            <div class="folio-field-box"><strong>Affinity:</strong> {st.session_state.cc_affinity} Arcana</div>
+            <div class="folio-field-box"><strong>Hair:</strong> {st.session_state.cc_hair_style} ({st.session_state.cc_hair_color})</div>
+            <div class="folio-field-box"><strong>Attire:</strong> {st.session_state.cc_outfit}</div>
+            <div class="folio-field-box"><strong>Familiar:</strong> {st.session_state.cc_companion}</div>
+            <div class="folio-field-box"><strong>Keepsake:</strong> {st.session_state.cc_keepsake}</div>
+            <div class="folio-field-box"><strong>Nature:</strong> {st.session_state.cc_personality}</div>
+        </div>
+        """, unsafe_allow_html=True)
 
 # ================= CHAPTER I: PLAYABLE VERTICAL SLICE =================
 else:
@@ -588,7 +976,7 @@ else:
     # 8. Interactive Choice Buttons with Stable IDs (Requirements 3 & 4: Explicit Choice IDs & Observable Consequences)
     st.markdown("### 🏹 What will you do next?")
     choices = scene.get("choices", [])
-    
+
     # If the puzzle was just solved, inject immediate triumphant continuation choices
     if state_dict.get("clockwork_guardian") == "operational" and current_location == "River Aqueduct":
         choices = [
