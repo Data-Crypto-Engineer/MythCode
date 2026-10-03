@@ -54,13 +54,45 @@ class DirectorAgent:
 
         elif a_id in ("speak_mira", "visit_mira"):
             target_location = "Whispering Village"
-            beat_id = "dialogue_mira"
-            objective = "Confer with Mira at her workshop about the waterwheel mechanism."
+            # Route to triumph beat if waterwheel/springs are already restored
+            is_mira_helped = (
+                world_state.get("clockwork_guardian") == "operational" or
+                world_state.get("water_supply") == "restored" or
+                world_state.get("npc_relationships", {}).get("Mira") in ("helped", "allied")
+            )
+            beat_id = "dialogue_mira_triumph" if is_mira_helped else "dialogue_mira"
+            objective = "Celebrate the awakened waterwheel with Mira." if is_mira_helped else "Confer with Mira at her workshop about the waterwheel mechanism."
+
+        elif a_id in ("help_mira_prep", "assist_mira_blueprints"):
+            target_location = "Whispering Village"
+            beat_id = "help_mira_prep"
+            objective = "Assist Mira in verifying the clockwork movement schematics."
+            proposed_state_changes["village_morale"] = min(100, world_state.get("village_morale", 60) + 5)
+
+        elif a_id in ("confer_mira_grove", "ask_mira_forest"):
+            target_location = "Whispering Village"
+            beat_id = "confer_mira_grove"
+            objective = "Consult Mira on her knowledge of the Ancient Grove and Sylvan's portal."
+
+        elif a_id in ("inspect_mira_inventions", "mira_workshop_gadgets"):
+            target_location = "Whispering Village"
+            beat_id = "inspect_mira_inventions"
+            objective = "Inspect Mira's clockwork inventions and gear prototypes."
+
+        elif a_id in ("thank_mira", "celebrate_mira"):
+            target_location = "Whispering Village"
+            beat_id = "thank_mira"
+            objective = "Share credit with Mira for saving the village springs."
 
         elif a_id in ("ask_mira_clues", "ask_mechanism_clues"):
             target_location = "Whispering Village"
             beat_id = "ask_mira_clues"
             objective = "Learn how the sentinel's command dais executes movement instructions."
+
+        elif a_id in ("bypass_mira", "ignore_mira"):
+            target_location = "River Aqueduct"
+            beat_id = "aqueduct_arrival"
+            objective = "March directly to the River Aqueduct without consulting Mira."
 
         elif a_id in ("speak_thorne", "dialogue_thorne"):
             target_location = "Whispering Village"
