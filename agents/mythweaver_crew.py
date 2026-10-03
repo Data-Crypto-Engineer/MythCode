@@ -127,12 +127,24 @@ class MythWeaverCrew:
                 # If guardian puzzle solved, mark guardian as operational!
                 if puzzle_id == "puzzle_sequence_guardian" and challenge_result:
                     director_plan["proposed_state_changes"]["clockwork_guardian"] = "operational"
-                    director_plan["proposed_state_changes"]["village_morale"] = world_state.village_morale + 15
+                    director_plan["proposed_state_changes"]["water_supply"] = "restored"
+                    director_plan["proposed_state_changes"]["village_morale"] = min(100, world_state.village_morale + 20)
+                    if "npc_relationships" not in director_plan["proposed_state_changes"]:
+                        director_plan["proposed_state_changes"]["npc_relationships"] = {}
+                    director_plan["proposed_state_changes"]["npc_relationships"]["Mira"] = "helped"
+                    if "persistent_memories" not in director_plan["proposed_state_changes"]:
+                        director_plan["proposed_state_changes"]["persistent_memories"] = []
+                    director_plan["proposed_state_changes"]["persistent_memories"].append({
+                        "key": "mira_sentinel_helped",
+                        "summary": f"{player_profile.name} arranged the sequential movement runes, awakening the Clockwork Guardian and restoring mountain water to Mira's workshop and Whispering Village.",
+                        "event_type": "puzzle_victory",
+                        "timestamp": time.time()
+                    })
                     player_profile.xp += 50
                     self.storage.add_character_memory(
                         player_id=player_id,
                         npc_name="Mira",
-                        event_summary="Player solved the sequence alignment and awakened the Clockwork Guardian!",
+                        event_summary=f"{player_profile.name} solved the sequence alignment and awakened the Clockwork Guardian, saving Mira's workshop and the village springs!",
                         sentiment="positive"
                     )
                     # Add to Codex of Becoming (PART 9)
@@ -205,6 +217,73 @@ class MythWeaverCrew:
                 "output": f"Challenge Level: {player_profile.traits.challenge_level}, Puzzle Pref: {player_profile.traits.puzzle_preference:.2f}",
                 "insights": insight_res["insights"]
             })
+
+            # Handle narrative consequences and persistent memories for explicit choices
+            if action_id:
+                if "npc_relationships" not in director_plan["proposed_state_changes"]:
+                    director_plan["proposed_state_changes"]["npc_relationships"] = {}
+                if "persistent_memories" not in director_plan["proposed_state_changes"]:
+                    director_plan["proposed_state_changes"]["persistent_memories"] = []
+                if "important_choices" not in director_plan["proposed_state_changes"]:
+                    director_plan["proposed_state_changes"]["important_choices"] = []
+
+                choice_meta = {
+                    "help_mira_prep": (
+                        "Helped Mira calibrate blueprint tolerances",
+                        {"Mira": "helped_prep"},
+                        "mira_prep",
+                        f"{player_profile.name} helped Mira calibrate the Clockwork Sentinel's movement tolerances in her workshop."
+                    ),
+                    "ask_mira_clues": (
+                        "Asked Mira for movement sequence advice",
+                        {"Mira": "consulted"},
+                        "mira_clues",
+                        f"Mira instructed {player_profile.name} on the 4-step sequence (Forward, Forward, Turn Right, Forward)."
+                    ),
+                    "speak_mira": (
+                        "Visited Mira at her workshop",
+                        {"Mira": "met"} if world_state.get_npc_relationship("Mira") == "unmet" else {},
+                        "mira_visit",
+                        f"{player_profile.name} visited Mira's workshop in Whispering Village."
+                    ),
+                    "bypass_mira": (
+                        "Bypassed Mira's workshop toward River Gorge",
+                        {"Mira": "bypassed"} if world_state.get_npc_relationship("Mira") not in ("helped", "helped_prep") else {},
+                        "mira_bypassed",
+                        f"{player_profile.name} marched directly to the River Aqueduct without conferring with Mira."
+                    ),
+                    "speak_thorne": (
+                        "Conferred with Elder Thorne",
+                        {"Elder Thorne": "consulted"},
+                        "thorne_consulted",
+                        f"{player_profile.name} conferred with Elder Thorne about the village history."
+                    ),
+                    "return_village_triumph": (
+                        "Celebrated water restoration in village square",
+                        {"Elder Thorne": "reverent", "Mira": "helped"},
+                        "village_triumph",
+                        f"Whispering Village held a celebration for {player_profile.name} as mountain springs returned."
+                    )
+                }
+
+                if action_id in choice_meta:
+                    conseq_text, rel_dict, mem_key, mem_summary = choice_meta[action_id]
+                    if rel_dict:
+                        for k, v in rel_dict.items():
+                            if world_state.get_npc_relationship(k) != "helped":
+                                director_plan["proposed_state_changes"]["npc_relationships"][k] = v
+                    director_plan["proposed_state_changes"]["persistent_memories"].append({
+                        "key": mem_key,
+                        "summary": mem_summary,
+                        "event_type": "player_choice",
+                        "timestamp": time.time()
+                    })
+                    director_plan["proposed_state_changes"]["important_choices"].append({
+                        "choice_id": action_id,
+                        "action_text": action_text,
+                        "consequence": conseq_text,
+                        "timestamp": time.time()
+                    })
 
             # 5. Agent 4: World Keeper evaluation
             world_eval = self.world_keeper.evaluate_world_mutation(
