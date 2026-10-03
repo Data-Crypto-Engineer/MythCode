@@ -40,6 +40,12 @@ class StateManager:
     def load_or_init_player(self, **kwargs) -> PlayerProfile:
         saved = self.storage.get_player_profile(self.player_id)
         if saved:
+            if kwargs:
+                data = dict(saved)
+                data.update(kwargs)
+                profile = PlayerProfile.from_dict(data)
+                self.storage.save_player_profile(profile.to_dict())
+                return profile
             return PlayerProfile.from_dict(saved)
         default_data = {
             "id": self.player_id,
