@@ -88,6 +88,22 @@ class StateValidator:
                 if c not in new_data["important_choices"]:
                     new_data["important_choices"].append(c)
 
+        # 7. NPC Relationships - merge without contradiction
+        if "npc_relationships" in proposed_updates and isinstance(proposed_updates["npc_relationships"], dict):
+            if "npc_relationships" not in new_data:
+                new_data["npc_relationships"] = {}
+            new_data["npc_relationships"].update(proposed_updates["npc_relationships"])
+
+        # 8. Persistent Memories - keyed replacement to maintain continuity
+        if "persistent_memories" in proposed_updates and isinstance(proposed_updates["persistent_memories"], list):
+            if "persistent_memories" not in new_data:
+                new_data["persistent_memories"] = []
+            for pm in proposed_updates["persistent_memories"]:
+                pm_key = pm.get("key")
+                if pm_key:
+                    new_data["persistent_memories"] = [m for m in new_data["persistent_memories"] if m.get("key") != pm_key]
+                new_data["persistent_memories"].append(pm)
+
         is_valid = len(issues) == 0
         validated_state = WorldState.from_dict(new_data)
         return is_valid, issues, validated_state
