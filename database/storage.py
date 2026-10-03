@@ -61,9 +61,19 @@ class SQLiteStorage:
                     discovered_locations_json TEXT,
                     important_choices_json TEXT,
                     unresolved_conflicts_json TEXT,
-                    updated_at REAL
+                    updated_at REAL,
+                    npc_relationships_json TEXT,
+                    persistent_memories_json TEXT
                 )
             """)
+            try:
+                cursor.execute("ALTER TABLE world_states ADD COLUMN npc_relationships_json TEXT")
+            except Exception:
+                pass
+            try:
+                cursor.execute("ALTER TABLE world_states ADD COLUMN persistent_memories_json TEXT")
+            except Exception:
+                pass
 
             # Character memories
             cursor.execute("""
@@ -202,8 +212,9 @@ class SQLiteStorage:
                 INSERT OR REPLACE INTO world_states
                 (player_id, kingdom, current_location, water_supply, forest_spirit_trust,
                  clockwork_guardian, village_morale, completed_quests_json,
-                 discovered_locations_json, important_choices_json, unresolved_conflicts_json, updated_at)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                 discovered_locations_json, important_choices_json, unresolved_conflicts_json,
+                 updated_at, npc_relationships_json, persistent_memories_json)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """, (
                 player_id,
                 state_dict.get("kingdom", "Elarion"),
@@ -216,7 +227,9 @@ class SQLiteStorage:
                 json.dumps(state_dict.get("discovered_locations", ["Whispering Village"])),
                 json.dumps(state_dict.get("important_choices", [])),
                 json.dumps(state_dict.get("unresolved_conflicts", [])),
-                time.time()
+                time.time(),
+                json.dumps(state_dict.get("npc_relationships", {"Mira": "unmet", "Elder Thorne": "neutral", "Sylvan": "unmet"})),
+                json.dumps(state_dict.get("persistent_memories", []))
             ))
             conn.commit()
 
@@ -225,6 +238,22 @@ class SQLiteStorage:
             row = conn.execute("SELECT * FROM world_states WHERE player_id = ?", (player_id,)).fetchone()
             if not row:
                 return None
+            
+            keys = row.keys() if hasattr(row, "keys") else []
+            npc_rels = {"Mira": "unmet", "Elder Thorne": "neutral", "Sylvan": "unmet"}
+            if "npc_relationships_json" in keys and row["npc_relationships_json"]:
+                try:
+                    npc_rels = json.loads(row["npc_relationships_json"])
+                except Exception:
+                    pass
+
+            p_mems = []
+            if "persistent_memories_json" in keys and row["persistent_memories_json"]:
+                try:
+                    p_mems = json.loads(row["persistent_memories_json"])
+                except Exception:
+                    pass
+
             return {
                 "kingdom": row["kingdom"],
                 "current_location": row["current_location"],
@@ -235,7 +264,9 @@ class SQLiteStorage:
                 "completed_quests": json.loads(row["completed_quests_json"] or "[]"),
                 "discovered_locations": json.loads(row["discovered_locations_json"] or "[]"),
                 "important_choices": json.loads(row["important_choices_json"] or "[]"),
-                "unresolved_conflicts": json.loads(row["unresolved_conflicts_json"] or "[]")
+                "unresolved_conflicts": json.loads(row["unresolved_conflicts_json"] or "[]"),
+                "npc_relationships": npc_rels,
+                "persistent_memories": p_mems
             }
 
     # --- Character Memory Operations ---
@@ -270,6 +301,69 @@ class SQLiteStorage:
                 }
                 for r in rows
             ]
+
+    def record_important_choice(self, player_id: str, choice_id: str, choice_text: str, consequence: str):
+        """Records an authoritative player choice into the persistent world state."""
+        world = self.get_world_state(player_id)
+        if not world:
+            return
+        choices = world.get("important_choices", [])
+        # Avoid duplicate choice entries if already recorded
+        if not any(c.get("choice_id") == choice_id for c in choices):
+            choices.append({
+                "choice_id": choice_id,
+                "choice_text": choice_text,
+                "consequence": consequence,
+                "timestamp": time.time()
+            })
+            world["important_choices"] = choices
+            self.save_world_state(player_id, world)
+            logger.info(f"Recorded important choice '{choice_id}' for player '{player_id}'")
+
+    def update_npc_relationship(self, player_id: str, npc_name: str, relationship: str, memory_summary: Optional[str] = None):
+        """Updates the persistent relationship status with an NPC and records an accompanying memory."""
+        world = self.get_world_state(player_id)
+        if not world:
+            return
+        rels = world.get("npc_relationships", {})
+        rels[npc_name] = relationship
+        world["npc_relationships"] = rels
+
+        if memory_summary:
+            p_mems = world.get("persistent_memories", [])
+            mem_key = f"{npc_name.lower().replace(' ', '_')}_{relationship}"
+            p_mems = [m for m in p_mems if m.get("key") != mem_key]
+            p_mems.append({
+                "key": mem_key,
+                "summary": memory_summary,
+                "npc_name": npc_name,
+                "event_type": "npc_relationship_update",
+                "relationship": relationship,
+                "timestamp": time.time()
+            })
+            world["persistent_memories"] = p_mems
+            # Also write to character_memories table
+            self.add_character_memory(player_id, npc_name, memory_summary, sentiment="positive" if "help" in relationship else "neutral")
+
+        self.save_world_state(player_id, world)
+        logger.info(f"Updated NPC '{npc_name}' relationship to '{relationship}' for player '{player_id}'")
+
+    def add_persistent_story_memory(self, player_id: str, memory_key: str, summary: str, event_type: str = "general", details: Optional[Dict[str, Any]] = None):
+        """Appends a persistent story memory without creating conflicting duplicates."""
+        world = self.get_world_state(player_id)
+        if not world:
+            return
+        p_mems = world.get("persistent_memories", [])
+        p_mems = [m for m in p_mems if m.get("key") != memory_key]
+        p_mems.append({
+            "key": memory_key,
+            "summary": summary,
+            "event_type": event_type,
+            "details": details or {},
+            "timestamp": time.time()
+        })
+        world["persistent_memories"] = p_mems
+        self.save_world_state(player_id, world)
 
     # --- Learning Progress ---
     def save_learning_progress(self, player_id: str, progress_dict: Dict[str, Any]):
