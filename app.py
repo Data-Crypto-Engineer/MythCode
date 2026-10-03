@@ -195,6 +195,32 @@ engine: GameEngine = st.session_state.game_engine
 image_service = get_image_service()
 config = get_app_config()
 
+# Safe multi-version wrappers to prevent signature TypeErrors across hot-reloads and deployments
+def safe_execute_action(eng: GameEngine, action_text: str, action_id: str = None) -> dict:
+    """Safely dispatches action to GameEngine with multi-version signature tolerance."""
+    if action_id:
+        try:
+            return eng.execute_action(action_text, action_id=action_id)
+        except TypeError:
+            try:
+                return eng.execute_action(action_text, "exploration", action_id)
+            except TypeError:
+                pass
+    return eng.execute_action(action_text)
+
+def safe_initialize_session(eng: GameEngine, **kwargs):
+    """Safely initializes player session with multi-version signature tolerance."""
+    try:
+        return eng.initialize_session(**kwargs)
+    except TypeError:
+        try:
+            return eng.initialize_session(
+                name=kwargs.get("name", "Aria"),
+                role=kwargs.get("role", "Rune Engineer")
+            )
+        except TypeError:
+            return eng.initialize_session()
+
 # Helper: Generate clean avatar SVG
 def get_character_portrait_svg(affinity: str, hair_color: str) -> str:
     color_map = {
@@ -329,7 +355,8 @@ if not st.session_state.game_started:
         hero_pronouns = st.selectbox("Pronouns", ["they/them", "she/her", "he/him", "ze/zir", "custom"])
 
         if st.button("🌟 Embark Into Whispering Village", type="primary", use_container_width=True):
-            engine.initialize_session(
+            safe_initialize_session(
+                engine,
                 name=hero_name,
                 pronouns=hero_pronouns,
                 role=hero_role,
@@ -339,7 +366,8 @@ if not st.session_state.game_started:
                 hair_color=hero_hair
             )
             # Initial arrival into Chapter 1
-            res = engine.execute_action(
+            res = safe_execute_action(
+                engine,
                 f"{hero_name} arrives in Whispering Village to investigate the silent springs.",
                 action_id="examine_fountain"
             )
@@ -358,7 +386,7 @@ if not st.session_state.game_started:
 else:
     scene = st.session_state.active_scene
     if not scene:
-        res = engine.execute_action("Look around Whispering Village.", action_id="examine_fountain")
+        res = safe_execute_action(engine, "Look around Whispering Village.", action_id="examine_fountain")
         scene = res["scene"]
         st.session_state.active_scene = scene
 
@@ -590,7 +618,7 @@ else:
                 st.session_state.last_action_feedback = feedback_map.get(c_id, f"You choose to {c_text.lower()}")
 
                 # Execute action via GameEngine using explicit choice ID (Requirement 3)
-                res = engine.execute_action(action_text=c_text, action_id=c_id)
+                res = safe_execute_action(engine, action_text=c_text, action_id=c_id)
                 st.session_state.active_scene = res["scene"]
                 st.session_state.puzzle_solved_flag = False
                 st.rerun()
