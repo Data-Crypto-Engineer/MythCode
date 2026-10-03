@@ -174,5 +174,53 @@ class TestMythCodeFeatures(unittest.TestCase):
         self.assertTrue(len(quests) >= 1)
         self.assertEqual(quests[0].id, "quest_water_crisis")
 
+    def test_14_explicit_choice_id_routing_and_vertical_slice(self):
+        """Verify Chapter 1: The Silence of the Springs playable vertical slice with explicit choice IDs."""
+        self.engine.initialize_session(
+            name="Lyra",
+            role="Rune Engineer",
+            magical_affinity="Arcane",
+            companion="Clockwork Owl",
+            keepsake="Brass Chrono-Gear"
+        )
+        # Step 1: Examine fountain
+        res1 = self.engine.execute_action("Kneel to examine the dry fountain bed", action_id="examine_fountain")
+        self.assertTrue(res1["success"])
+        self.assertEqual(res1["scene"]["location"], "Whispering Village")
+        self.assertIn("Fountain", res1["scene"]["scene_title"])
+
+        # Step 2: Speak with Mira
+        res2 = self.engine.execute_action("Speak with Mira at her workshop", action_id="speak_mira")
+        self.assertTrue(res2["success"])
+        self.assertIn("Mira", res2["scene"]["speaker"])
+
+        # Step 3: Ask Mira for mechanism clues
+        res3 = self.engine.execute_action("Ask how the sentinel dais works", action_id="ask_mira_clues")
+        self.assertTrue(res3["success"])
+        self.assertIn("Dais", res3["scene"]["scene_title"])
+        self.assertIn("FORWARD", res3["scene"]["scene_description"])
+
+        # Step 4: Follow aqueduct trail to the river gorge
+        res4 = self.engine.execute_action("Follow aqueduct trail", action_id="follow_aqueduct")
+        self.assertTrue(res4["success"])
+        self.assertEqual(res4["world_state"]["current_location"], "River Aqueduct")
+        self.assertIn("Aqueduct", res4["scene"]["scene_title"])
+
+        # Step 5: Interact with Sentinel (trigger challenge beat)
+        res5 = self.engine.execute_action("Approach the sentinel command dais", action_id="interact_sentinel")
+        self.assertTrue(res5["success"])
+        self.assertEqual(res5["active_challenge"], "puzzle_sequence_guardian")
+
+        # Step 6: Solve sequence puzzle
+        solve_res = self.engine.solve_challenge("puzzle_sequence_guardian", ["FORWARD", "FORWARD", "TURN_RIGHT", "FORWARD"])
+        self.assertTrue(solve_res["puzzle_correct"])
+        self.assertEqual(solve_res["world_state"]["clockwork_guardian"], "operational")
+
+        # Step 7: Return triumphant
+        res7 = self.engine.execute_action("Return to village square", action_id="return_village_triumph")
+        self.assertTrue(res7["success"])
+        self.assertEqual(res7["world_state"]["current_location"], "Whispering Village")
+        self.assertIn("Springs Awaken", res7["scene"]["scene_title"])
+
 if __name__ == "__main__":
     unittest.main()
