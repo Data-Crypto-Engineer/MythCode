@@ -79,8 +79,67 @@ class StoryWeaverAgent:
                 "dialogue": f"{hero_name}, the sentinel has no intuition—it executes movement instructions line-by-line, in exact order. Step one mistake, and the gears jam! Will you accompany me to the aqueduct?",
                 "choices": [
                     {"id": "follow_aqueduct", "text": "Accompany Mira downstream to the River Aqueduct."},
+                    {"id": "help_mira_prep", "text": "Offer to help Mira inspect and calibrate her blueprints first."},
                     {"id": "ask_mira_clues", "text": "Ask Mira how the sentinel's command dais works before leaving."},
                     {"id": "inspect_fountain", "text": "Double-check the village fountain pipes first."}
+                ]
+            },
+            "dialogue_mira_triumph": {
+                "chapter": "Chapter I: The Silence of the Springs",
+                "title": "Mira's Workshop — Waters Unleashed",
+                "description": (
+                    f"Water gurgles merrily through the copper cooling pipes of Mira's workshop. Polished brass gauges spin in steady rhythm. "
+                    f"Mira pushes her welding goggles up onto her forehead, wiping away a smear of machine grease with the back of her glove as she sees you enter with your {companion}."
+                ),
+                "speaker": "Mira the Inventor",
+                "dialogue": f"\"{hero_name}! Listen to that sound—the river waterwheel is turning like clockwork! Every conduit in the village is flowing again because of that sequence you aligned. You didn't just save my workshop; you saved Whispering Village!\"",
+                "choices": [
+                    {"id": "confer_mira_grove", "text": "Ask Mira what she knows about the disturbances reported in the Ancient Grove."},
+                    {"id": "inspect_mira_inventions", "text": "Ask Mira about her experimental clockwork prototypes on the workbench."},
+                    {"id": "return_village", "text": "Head back to the village square."}
+                ]
+            },
+            "help_mira_prep": {
+                "chapter": "Chapter I: The Silence of the Springs",
+                "title": "Calibrating Blueprints at the Workshop",
+                "description": (
+                    f"You lean over the workbench beside Mira, using your {hero_role} eye to examine the gear ratios and friction tolerances on the parchment. "
+                    f"Together, you and Mira refine the movement plan for the Clockwork Sentinel. Your {companion} trills approvingly as Mira inks in the final calibrations."
+                ),
+                "speaker": "Mira the Inventor",
+                "dialogue": f"\"Brilliant calculation, {hero_name}! These compensations ensure the sentinel won't skid on the damp river flags. With this sequence verified, we're ready for the gorge dais!\"",
+                "choices": [
+                    {"id": "follow_aqueduct", "text": "March together to the River Aqueduct to awaken the sentinel."},
+                    {"id": "ask_mira_clues", "text": "Review the exact movement rune order once more."},
+                    {"id": "inspect_fountain", "text": "Take a quick glance at the village fountain before leaving."}
+                ]
+            },
+            "confer_mira_grove": {
+                "chapter": "Chapter II: The Sylvan Gateway",
+                "title": "Consulting Mira on the Ancient Grove",
+                "description": (
+                    f"Mira unrolls a broader map of Elarion, tracing the aqueduct's upstream sources into the emerald canopy of the Ancient Grove. "
+                    f"Your {companion} hops closer to inspect the inked boundary lines."
+                ),
+                "speaker": "Mira the Inventor",
+                "dialogue": f"\"The water reaches our valley from the Grove, but the forest spirit Sylvan guards the upper threshold with conditional runic gates. To pass, you'll need more than a simple sequence—you'll have to evaluate truth conditions! Be careful up there, {hero_name}.\"",
+                "choices": [
+                    {"id": "goto_grove", "text": "Set out for the misty canopy of the Ancient Grove."},
+                    {"id": "return_village", "text": "Return to Whispering Village square."}
+                ]
+            },
+            "inspect_mira_inventions": {
+                "chapter": "Chapter I: The Silence of the Springs",
+                "title": "Mira's Clockwork Workshop Wonders",
+                "description": (
+                    f"Rows of brass pendulums, clockwork songbirds, and steam-driven micro-pumps line the shelves. "
+                    f"Mira beams with pride as she tinkers with a miniature harmonic resonator beside your {companion}."
+                ),
+                "speaker": "Mira the Inventor",
+                "dialogue": f"\"With running water powering my lathe again, I can finally finish these prototypes! As a token of our partnership, whenever you need mechanical advice, my doors are open, {hero_name}.\"",
+                "choices": [
+                    {"id": "confer_mira_grove", "text": "Ask about the Ancient Grove to the north."},
+                    {"id": "return_village", "text": "Step back outside into the village square."}
                 ]
             },
             "ask_mira_clues": {
@@ -283,23 +342,75 @@ class StoryWeaverAgent:
             "active_challenge": active_challenge
         }
 
-        # Personalize dialogue with character memories
+        # Natural narrative memory and relationship weaving
         npc_name = base_scene["speaker"]
-        relevant_mems = [m for m in character_memories if m.get("npc_name") == npc_name or npc_name in m.get("npc_name", "")]
-        if relevant_mems:
-            mem_summary = relevant_mems[0]["event_summary"]
-            base_scene["dialogue"] = f"(Remembering: '{mem_summary}') " + base_scene["dialogue"]
+        npc_simple = npc_name.split()[0] if npc_name else ""
+        npc_relationships = world_state.get("npc_relationships", {})
+        npc_rel = npc_relationships.get(npc_simple, "neutral")
+        is_water_restored = (world_state.get("water_supply") == "restored" or world_state.get("clockwork_guardian") in ("operational", "repaired"))
 
-        # World state overrides: Guardian awakened or Water restored
+        # 1. Mira memory & relationship continuity
+        if npc_simple == "Mira":
+            if is_water_restored or npc_rel in ("helped", "allied"):
+                # If water is restored or Mira was helped, use triumphant dialogue
+                if beat_id in ("dialogue_mira", "dialogue_mira_triumph"):
+                    base_scene["scene_title"] = "Mira's Workshop — Waters Unleashed"
+                    base_scene["scene_description"] = (
+                        f"Water gurgles merrily through the copper cooling pipes of Mira's workshop. Polished brass gauges spin in steady rhythm. "
+                        f"Mira pushes her welding goggles up onto her forehead, wiping away machine grease as she sees you enter with your {companion}."
+                    )
+                    base_scene["dialogue"] = (
+                        f"\"{hero_name}! Listen to that sound—the river waterwheel is turning like clockwork! Every conduit in the village is flowing again "
+                        f"because of that sequence you aligned. You didn't just save my workshop; you saved Whispering Village!\""
+                    )
+                    base_scene["choices"] = [
+                        {"id": "confer_mira_grove", "text": "Ask Mira what she knows about disturbances in the Ancient Grove."},
+                        {"id": "inspect_mira_inventions", "text": "Ask Mira about her experimental clockwork prototypes."},
+                        {"id": "return_village", "text": "Head back to the village square."}
+                    ]
+            elif npc_rel == "helped_prep" and beat_id == "dialogue_mira":
+                base_scene["dialogue"] = (
+                    f"\"Welcome back, {hero_name}! Those friction calibrations we calculated on the blueprints earlier are ready. "
+                    f"The Clockwork Sentinel awaits our command at the gorge! Ready to head down?\""
+                )
+            elif npc_rel == "bypassed" and beat_id == "dialogue_mira":
+                base_scene["dialogue"] = (
+                    f"\"Ah, {hero_name}! I saw you marching straight down to the aqueduct earlier. Did you inspect the seized sentinel dais? "
+                    f"Its commands must be sequenced with mathematical precision!\""
+                )
+            elif npc_rel in ("consulted", "met") and beat_id == "dialogue_mira":
+                base_scene["dialogue"] = (
+                    f"\"Welcome back to the workshop, {hero_name}! Remember the 4-step sequence on the dais: Forward, Forward, Turn Right, Forward. "
+                    f"Order is everything—the sentinel follows instructions line-by-line!\""
+                )
+
+        # 2. Elder Thorne memory & relationship continuity
+        elif npc_simple == "Elder":
+            if is_water_restored:
+                if beat_id == "inspect_fountain":
+                    base_scene["scene_title"] = "The Singing Springs of Whispering Village"
+                    base_scene["scene_description"] = (
+                        f"Crystal-clear mountain water cascades through the carved runic channels of the village fountain, churning "
+                        f"into the deep stone basin with a joyful roar. Your {companion} bathes its feathers at the water's edge. "
+                        f"Villagers fill clay amphorae with laughter, celebrating the end of the drought."
+                    )
+                    base_scene["dialogue"] = f"\"{hero_name}, look upon the fruits of your labor! The ancient conduits hum with life once more. The village will never forget your deed.\""
+                    base_scene["choices"] = [
+                        {"id": "speak_mira", "text": "Visit Mira at her workshop."},
+                        {"id": "goto_grove", "text": "Travel north toward the Ancient Grove to investigate reports of agitated spirits."},
+                        {"id": "goto_ruins", "text": "Explore the subterranean Clockwork Ruins beneath the valley."}
+                    ]
+                elif beat_id not in ("village_return_triumph",):
+                    base_scene["dialogue"] = f"\"{hero_name}, our hearts overflow just as the cisterns do. You brought back the lifeblood of Whispering Village. Walk with honor throughout Elarion.\""
+
+        # 3. River Aqueduct World State Overrides
         if world_state.get("clockwork_guardian") in ("operational", "repaired") and location == "River Aqueduct":
             base_scene["scene_description"] += " The Clockwork Guardian hums quietly, its crystalline core spinning in smooth rhythm."
 
-        if world_state.get("water_supply") == "restored":
-            base_scene["scene_description"] += " Crystal-clear water cascades once again through the channels of Elarion!"
-            if base_scene["speaker"] == "Elder Thorne" and beat_id != "village_return_triumph":
-                base_scene["dialogue"] = f"Praise the stars, {hero_name}! The fountains are filled and our kingdom is saved!"
+        if is_water_restored and location == "River Aqueduct":
+            base_scene["scene_description"] += " Below in the gorge, the giant waterwheel spins with immense hydraulic power, splashing foaming spray against the mossy cliffs."
 
-        # Enrich with Gemini Storyteller if available (narrative prose only)
+        # Enrich with Gemini Storyteller if available (narrative prose strictly grounded in structured facts)
         enriched_scene = self.gemini.enrich_scene(
             base_scene=base_scene,
             player_profile=player_profile,
