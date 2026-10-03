@@ -236,6 +236,13 @@ class CloudflareImageService:
                 <text x="300" y="225" text-anchor="middle" font-family="serif" font-size="13" font-weight="bold" fill="{svg_palette['ink']}">ANCIENT GROVE OF SYLVAN</text>
             </svg>
             """
+        elif category == "character_portrait":
+            from utils.character_visuals import generate_protagonist_svg
+            svg_content = generate_protagonist_svg()
+            clean_svg = svg_content.strip()
+            b64_svg = base64.b64encode(clean_svg.encode("utf-8")).decode("utf-8")
+            return f"data:image/svg+xml;base64,{b64_svg}"
+
         elif category == "Clockwork Ruins":
             svg_content = f"""
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 240" width="100%" height="100%">
