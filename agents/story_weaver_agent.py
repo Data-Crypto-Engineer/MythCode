@@ -1,7 +1,7 @@
 """
 Story Weaver Agent (Agent 3).
 Generates evolving fantasy narratives, dialogue, and choices grounded in world state and memory.
-Enriched with Gemini AI storytelling (PART 6) and responsive deterministic beat templates.
+Specialized for Chapter I: The Silence of the Springs with rich storybook prose and explicit choice IDs.
 """
 from typing import Dict, Any, List, Optional
 from utils.logger import setup_logger
@@ -45,120 +45,192 @@ class StoryWeaverAgent:
         affinity = player_profile.get("magical_affinity", "Arcane")
         keepsake = player_profile.get("keepsake", "Brass Chrono-Gear")
 
-        # 1. Base Story Beats Library
+        # 1. Base Story Beats Library for Chapter I & Beyond
         beats = {
             # --- Whispering Village Beats ---
             "inspect_fountain": {
-                "title": "Investigating the Fountain's Dry Reservoir",
+                "chapter": "Chapter I: The Silence of the Springs",
+                "title": "Investigating the Fountain's Dried Springs",
                 "description": (
-                    f"You kneel beside the intricately carved granite fountain with your {companion} peering closely. "
-                    f"Scraping away dried sediment, your fingers trace ancient runic conduit veins. They lead directly downstream "
-                    f"toward the River Aqueduct, with a secondary harmonic channel veering off toward the Ancient Grove. "
-                    f"The problem isn't a natural drought—someone or something has deliberately seized the sluice regulators!"
+                    f"You kneel beside the great fountain with your {companion} perched alertly upon the granite rim. "
+                    f"Scraping away dried mineral crusts, your fingers trace intricate runic conduits etched into the stone. "
+                    f"Your {affinity} affinity detects a faint magical vibration pulsing through the bedrock: the springs have not "
+                    f"naturally evaporated. Downstream, the main waterwheel sluice gates at the River Aqueduct have been locked shut!"
                 ),
                 "speaker": "Elder Thorne",
-                "dialogue": f"{hero_name}, your {affinity.lower()} senses don't deceive you. The old aqueduct gears downstream have seized, and the forest spirits upstream have turned cold. Where will you direct your steps?",
+                "dialogue": f"{hero_name}, your {affinity.lower()} perception is acute. The sluice gates downstream are shut tight, and Mira has been working relentlessly on the clockwork sentinel. Will you confer with her, or march directly to the aqueduct?",
                 "choices": [
-                    {"id": "visit_mira", "text": "Walk over to Mira's workshop to ask about the aqueduct gears."},
-                    {"id": "head_to_river", "text": "Travel downstream toward the River Aqueduct."},
-                    {"id": "goto_grove", "text": "Venture into the misty canopy of the Ancient Grove."}
+                    {"id": "speak_mira", "text": "Walk over to Mira's workshop to ask about the seized sluice gates."},
+                    {"id": "follow_aqueduct", "text": "Follow the dry stone aqueduct trail downstream toward the River Gorge."},
+                    {"id": "speak_thorne", "text": "Ask Elder Thorne about the history of the ancient waterwheel."}
                 ]
             },
             "dialogue_mira": {
-                "title": "Mira's Clockwork Workshop",
+                "chapter": "Chapter I: The Silence of the Springs",
+                "title": "Mira's Workshop in the Village",
                 "description": (
-                    f"Sparks flutter from Mira's workbench as she tightens a brass cog. Her eyes widen as she spots your {keepsake}. "
-                    f"\"A fellow practitioner of mechanical craft!\" she beams. She unrolls a parchment schematic of the River Aqueduct. "
-                    f"\"The main waterwheel sluice is blocked by our dormant Clockwork Sentinel. If you can command it through the proper "
-                    f"step-by-step sequence of motions, it can reach the activation altar and release the clutch!\""
+                    f"Sparks scatter across Mira's workbench as she tightens a brass caliper. Her eyes widen as she notices your {keepsake}. "
+                    f"\"By the gears of Elarion—a {hero_role}!\" she exclaims, unrolling an inked parchment schematic. "
+                    f"\"The silence of the springs began yesterday. The giant waterwheel at the river gorge is sound, but its clutch is locked. "
+                    f"The ancient Clockwork Sentinel that operates the clutch is frozen on the stone dais, awaiting instructions. "
+                    f"If you can arrange its movement sequence correctly, it will step to the altar and unlock the mountain waters!\""
                 ),
                 "speaker": "Mira the Inventor",
-                "dialogue": f"Take this advice, {hero_name}: sentinels execute instructions sequentially, line-by-line. Order is everything! Will you come with me to the Aqueduct?",
+                "dialogue": f"{hero_name}, the sentinel has no intuition—it executes movement instructions line-by-line, in exact order. Step one mistake, and the gears jam! Will you accompany me to the aqueduct?",
                 "choices": [
-                    {"id": "head_to_river", "text": "Travel downstream toward the River Aqueduct with Mira."},
-                    {"id": "inspect_fountain", "text": "Double-check the village fountain pipes first."},
-                    {"id": "goto_grove", "text": "Ask about the forest spirits in the Ancient Grove instead."}
+                    {"id": "follow_aqueduct", "text": "Accompany Mira downstream to the River Aqueduct."},
+                    {"id": "ask_mira_clues", "text": "Ask Mira how the sentinel's command dais works before leaving."},
+                    {"id": "inspect_fountain", "text": "Double-check the village fountain pipes first."}
+                ]
+            },
+            "ask_mira_clues": {
+                "chapter": "Chapter I: The Silence of the Springs",
+                "title": "Deciphering the Sentinel Dais",
+                "description": (
+                    f"Mira traces a 3x3 checkered grid in the stone dust with a brass rod while your {companion} watches closely. "
+                    f"\"The sentinel starts facing north at the edge of the chasm,\" she explains. \"The clutch pedestal sits two paces forward "
+                    f"and one pace to the right. To reach it safely across the tiles without tumbling into the empty sluice trench, you must queue: "
+                    f"FORWARD, FORWARD, TURN RIGHT, and FORWARD. Order is everything—actions arranged in a sequence dictate its exact path!\""
+                ),
+                "speaker": "Mira the Inventor",
+                "dialogue": "Remember, the runes execute in the exact order you slot them into the dais. Ready to awaken the mechanism?",
+                "choices": [
+                    {"id": "follow_aqueduct", "text": "Proceed to the River Aqueduct to awaken the sentinel."},
+                    {"id": "inspect_fountain", "text": "Return to the village fountain."}
                 ]
             },
             "dialogue_thorne": {
+                "chapter": "Chapter I: The Silence of the Springs",
                 "title": "Council with Elder Thorne",
                 "description": (
-                    f"Elder Thorne leans heavily against his wooden staff near the town hall. Villagers nod respectfully as you and your "
-                    f"{companion} approach. \"The kingdom's elders have charted three pathways to restore our waters: mechanical repair at the Aqueduct, "
-                    f"spiritual harmony in the Grove, or channeling the subterranean conduits in the old ruins.\""
+                    f"Elder Thorne leans heavily against his wooden staff near the empty irrigation channels. "
+                    f"\"The kingdom of Elarion flourished because the ancients bound logic and magic together,\" he murmurs. "
+                    f"\"When the waters flow, the heart of our realm beats true. If the aqueduct cannot be restored, the grove "
+                    f"and ruins will surely wither next.\""
                 ),
                 "speaker": "Elder Thorne",
-                "dialogue": f"As a {hero_role}, your wisdom is our greatest hope, {hero_name}. Which path calls to your instincts?",
+                "dialogue": f"As a {hero_role}, your hands carry the craft of our ancestors, {hero_name}. Guide Mira and awaken the mechanism.",
                 "choices": [
-                    {"id": "head_to_river", "text": "Head to the River Aqueduct to inspect the machinery."},
-                    {"id": "goto_grove", "text": "Venture into the Ancient Grove to petition Sylvan the Forest Spirit."},
-                    {"id": "goto_ruins", "text": "Delve into the subterranean Clockwork Ruins."}
+                    {"id": "speak_mira", "text": "Speak with Mira at her workshop."},
+                    {"id": "follow_aqueduct", "text": "Head straight to the River Aqueduct downstream."}
                 ]
             },
 
             # --- River Aqueduct Beats ---
             "aqueduct_arrival": {
+                "chapter": "Chapter I: The Silence of the Springs",
                 "title": "The Seized Waterwheel at the Aqueduct",
                 "description": (
-                    f"You arrive at the roaring gorge where towering oak and brass gears hang suspended over dry river flagstones. "
-                    f"A dormant Clockwork Sentinel rests on a raised stone platform. Before it lies a 3x3 checkered stone pathway "
-                    f"leading to the crystal activation pedestal."
+                    f"The roar of the river is reduced to a hollow drip. Towering oak and brass cogs hang suspended across the gorge. "
+                    f"Upon a raised checkered flagstone platform stands the bronze Clockwork Sentinel. Its chest-plate displays three "
+                    f"dormant crystalline runes, and its mechanical joints are poised in silence before the empty sluice clutch."
                 ),
                 "speaker": "Mira the Inventor",
-                "dialogue": f"{hero_name}, the guardian is ready for instructions! Input the exact step-by-step movement program so it advances forward and turns right to the altar.",
+                "dialogue": f"Here it is, {hero_name}! The command altar stands before the sentinel. Arrange the movement sequence so it traverses the tiles and unlocks the clutch!",
                 "choices": [
-                    {"id": "solve_guardian_puzzle", "text": "Step up to the control altar to guide the Clockwork Guardian (Sequence Puzzle)."},
-                    {"id": "inspect_cogs", "text": "Examine the seized teeth of the massive waterwheel."},
+                    {"id": "interact_sentinel", "text": "Step up to the command dais to arrange the movement runes (Sequence Puzzle)."},
+                    {"id": "examine_gears", "text": "Examine the massive waterwheel teeth and chasm stones."},
+                    {"id": "return_village", "text": "Walk back to Whispering Village."}
+                ]
+            },
+            "examine_gears": {
+                "chapter": "Chapter I: The Silence of the Springs",
+                "title": "Inspecting the Clockwork Waterwheel",
+                "description": (
+                    f"You peer through the massive brass spokes of the waterwheel. The clutch teeth are fully intact, but held rigidly "
+                    f"by a spring-loaded locking bar. A mechanical linkage leads directly from the locking bar to the pedestal at the end "
+                    f"of the checkered stone platform. Only when the sentinel steps onto the final pressure plate will the clutch release."
+                ),
+                "speaker": "Mira the Inventor",
+                "dialogue": "The mechanism is structurally sound! It only needs the sentinel's weight on the activation plate. Step to the dais!",
+                "choices": [
+                    {"id": "interact_sentinel", "text": "Step up to the command dais to arrange the movement runes."},
                     {"id": "return_village", "text": "Return to Whispering Village."}
                 ]
             },
             "challenge_sequence": {
-                "title": "Control Altar: Guiding the Clockwork Sentinel",
+                "chapter": "Chapter I: The Silence of the Springs",
+                "title": "Control Altar: The Sentinel's Movement Program",
                 "description": (
-                    f"The brass pedestal before you pulses with glowing runic glyphs. Four command slots await your instructions: "
-                    f"Forward movements and turns. Below, the Clockwork Guardian awaits your program."
+                    f"The brass pedestal before you pulses with soft amber light. Four rune sockets await your commands: "
+                    f"Forward strides and directional pivots. Below, the Clockwork Sentinel stands balanced, its copper gears humming "
+                    f"as it awaits the sequence of instructions."
                 ),
-                "speaker": "Sentinel Control Interface",
-                "dialogue": "Awaiting sequential execution queue. Instruction order determines the sentinel's spatial destination.",
+                "speaker": "Sentinel Dais Inscription",
+                "dialogue": "Awaiting sequential rune arrangement. Actions will execute chronologically from first slot to last.",
                 "choices": [
-                    {"id": "solve_guardian_puzzle", "text": "Enter and execute the movement sequence on the altar."},
-                    {"id": "consult_hint", "text": "Consult the Arcane Archives for a sequence hint."},
-                    {"id": "step_back_aqueduct", "text": "Step back to survey the aqueduct."}
+                    {"id": "interact_sentinel", "text": "Queue movement runes on the control dais."},
+                    {"id": "examine_gears", "text": "Step back to review the waterwheel chasm."},
+                    {"id": "return_village", "text": "Step back to the trail."}
+                ]
+            },
+
+            # --- Village Triumph Beat (Post-Sequence Solve) ---
+            "village_return_triumph": {
+                "chapter": "Chapter I: The Silence of the Springs",
+                "title": "The Springs Awaken in Whispering Village",
+                "description": (
+                    f"You return to the village square to the joyous sound of rushing water! Crystal-clear mountain springs surge "
+                    f"into the central fountain, splashing over carved granite rims and filling the village irrigation canals. "
+                    f"Villagers gather in celebration, cheering for {hero_name} the {hero_role} and their faithful {companion}."
+                ),
+                "speaker": "Elder Thorne",
+                "dialogue": f"The silence has broken! The springs sing once more, all thanks to your mastery of sequence. You have proven yourself a true protector of Elarion, {hero_name}!",
+                "choices": [
+                    {"id": "speak_mira", "text": "Speak with Mira about the next regional disturbance."},
+                    {"id": "goto_grove", "text": "Venture north toward the Ancient Grove to investigate reports of agitated forest spirits."},
+                    {"id": "goto_ruins", "text": "Delve into the subterranean Clockwork Ruins."}
+                ]
+            },
+            "village_return": {
+                "chapter": "Chapter I: The Silence of the Springs",
+                "title": "Whispering Village Square",
+                "description": (
+                    f"You return to the cobblestone square of Whispering Village. The morning breeze rustles through the eaves. "
+                    f"Elder Thorne gazes down the valley, awaiting news of the waterwheel."
+                ),
+                "speaker": "Elder Thorne",
+                "dialogue": f"Welcome back, {hero_name}. Have you uncovered the truth behind the seized waterwheel at the gorge?",
+                "choices": [
+                    {"id": "follow_aqueduct", "text": "Return downstream to the River Aqueduct."},
+                    {"id": "speak_mira", "text": "Speak with Mira at her workshop."},
+                    {"id": "inspect_fountain", "text": "Examine the fountain once more."}
                 ]
             },
 
             # --- Ancient Grove Beats ---
             "grove_arrival": {
+                "chapter": "Chapter II: The Sylvan Gateway",
                 "title": "The Misty Canopy of the Ancient Grove",
                 "description": (
                     f"Silver mist coils among massive willow boughs glowing with emerald moss. In the clearing rises an ancient "
                     f"runic stone gateway. Sylvan, the Forest Spirit, manifests in a swirl of shimmering leaves."
                 ),
                 "speaker": "Sylvan the Forest Spirit",
-                "dialogue": f"Mortals come seeking water with iron tools. But our sacred springs heed only those who understand conditionality. The gateway tests whether your condition is True or False.",
+                "dialogue": f"Mortals seek water with iron tools. But our sacred springs heed only those who understand conditionality. The gateway tests whether your condition is True or False.",
                 "choices": [
                     {"id": "solve_door_puzzle", "text": "Approach the runic portal and evaluate the opening condition (Conditional Puzzle)."},
-                    {"id": "plead_harmony", "text": f"Present your {affinity} affinity and assure Sylvan of your peaceful intent."},
                     {"id": "return_village", "text": "Return to Whispering Village."}
                 ]
             },
             "challenge_conditions": {
+                "chapter": "Chapter II: The Sylvan Gateway",
                 "title": "The Sylvan Runic Gateway Test",
                 "description": (
-                    f"The moss-covered doorway displays ancient glowing script: 'IF the traveler carries the Emerald Seal of Concord, "
+                    f"The moss-covered doorway displays glowing script: 'IF the traveler carries the Emerald Seal of Concord, "
                     f"unseal the archway; ELSE remain dormant stone.' Three choices lie before you."
                 ),
                 "speaker": "Sylvan the Forest Spirit",
                 "dialogue": "Evaluate the condition with true logic, traveler. An if/else branch never wavers from mathematical truth.",
                 "choices": [
                     {"id": "solve_door_puzzle", "text": "Select your condition evaluation for the gateway."},
-                    {"id": "consult_hint", "text": "Request an arcane hint from Sylvan."},
-                    {"id": "step_back_grove", "text": "Step back to inspect the grove clearing."}
+                    {"id": "return_village", "text": "Step back to Whispering Village."}
                 ]
             },
 
             # --- Clockwork Ruins Beats ---
             "ruins_arrival": {
+                "chapter": "Chapter III: Resonating Conduits",
                 "title": "The Subterranean Conduit Chamber",
                 "description": (
                     f"Descending ancient spiral stairs carved into bedrock, you enter a vast cavern beneath the reservoir. "
@@ -168,11 +240,11 @@ class StoryWeaverAgent:
                 "dialogue": "A single pulse will fade before reaching the cisterns. Only a sustained iterative loop across all five conduits will awaken the subterranean pumps.",
                 "choices": [
                     {"id": "solve_loop_puzzle", "text": "Harmonize the five energy tiles using a repetitive cycle (Loop Puzzle)."},
-                    {"id": "survey_chamber", "text": "Examine the crystalline conduits running through the walls."},
-                    {"id": "return_aqueduct", "text": "Ascend back to the River Aqueduct."}
+                    {"id": "return_village", "text": "Ascend back to the surface."}
                 ]
             },
             "challenge_loops": {
+                "chapter": "Chapter III: Resonating Conduits",
                 "title": "The Resonating Conduit of Five",
                 "description": (
                     f"Five crystalline tiles gleam before you. Instead of chanting five separate manual commands, your {hero_role} "
@@ -182,32 +254,14 @@ class StoryWeaverAgent:
                 "dialogue": "Channel the loop spell. In programming and runecraft, loops conquer repetition.",
                 "choices": [
                     {"id": "solve_loop_puzzle", "text": "Activate the 5-step conduit loop."},
-                    {"id": "consult_hint", "text": "Seek a hint on loop syntax."},
-                    {"id": "step_back_ruins", "text": "Step back to examine the cavern."}
-                ]
-            },
-
-            # --- Village Return ---
-            "village_return": {
-                "title": "Back at the Village Square",
-                "description": (
-                    f"You return to Whispering Village. The air is tense with anticipation. Villagers look to you eagerly "
-                    f"as your {companion} perches on the edge of the dried fountain."
-                ),
-                "speaker": "Elder Thorne",
-                "dialogue": f"Welcome back, {hero_name}. Have you uncovered news from the Aqueduct or the Grove?",
-                "choices": [
-                    {"id": "visit_mira", "text": "Speak with Mira at her workshop."},
-                    {"id": "head_to_river", "text": "Head back out to the River Aqueduct."},
-                    {"id": "goto_grove", "text": "Journey into the Ancient Grove."}
+                    {"id": "return_village", "text": "Step back to the surface."}
                 ]
             }
         }
 
-        # Select base beat or fallback to location default
+        # Select base beat or fallback
         scene_data = beats.get(beat_id)
         if not scene_data:
-            # Fallback to general location
             if location == "River Aqueduct":
                 scene_data = beats["aqueduct_arrival"]
             elif location == "Ancient Grove":
@@ -215,9 +269,10 @@ class StoryWeaverAgent:
             elif location == "Clockwork Ruins":
                 scene_data = beats["ruins_arrival"]
             else:
-                scene_data = beats["dialogue_thorne"]
+                scene_data = beats["inspect_fountain"]
 
         base_scene = {
+            "chapter": scene_data.get("chapter", "Chapter I: The Silence of the Springs"),
             "scene_title": scene_data["title"],
             "scene_description": scene_data["description"],
             "speaker": scene_data["speaker"],
@@ -241,10 +296,10 @@ class StoryWeaverAgent:
 
         if world_state.get("water_supply") == "restored":
             base_scene["scene_description"] += " Crystal-clear water cascades once again through the channels of Elarion!"
-            if base_scene["speaker"] == "Elder Thorne":
+            if base_scene["speaker"] == "Elder Thorne" and beat_id != "village_return_triumph":
                 base_scene["dialogue"] = f"Praise the stars, {hero_name}! The fountains are filled and our kingdom is saved!"
 
-        # 2. Enrich with Gemini Storyteller if available (PART 6)
+        # Enrich with Gemini Storyteller if available (narrative prose only)
         enriched_scene = self.gemini.enrich_scene(
             base_scene=base_scene,
             player_profile=player_profile,
