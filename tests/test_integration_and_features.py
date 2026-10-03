@@ -222,5 +222,51 @@ class TestMythCodeFeatures(unittest.TestCase):
         self.assertEqual(res7["world_state"]["current_location"], "Whispering Village")
         self.assertIn("Springs Awaken", res7["scene"]["scene_title"])
 
+    def test_15_character_creation_and_visual_coherence(self):
+        """Verify full protagonist customization persistence and visual SVG generation."""
+        from utils.character_visuals import generate_protagonist_svg
+
+        self.engine.initialize_session(
+            name="Corin",
+            pronouns="he/him",
+            role="Spellweaver",
+            appearance="Nimble & poised with amber gaze",
+            hair_style="Windswept Locks",
+            hair_color="Silver",
+            outfit="Celestial Silk Tunic",
+            magical_affinity="Water",
+            personality="Witty & Resourceful",
+            companion="Runestone Fox",
+            learning_style="Intuitive Pattern-Hunting",
+            keepsake="River Prism"
+        )
+        loaded = self.engine.state_mgr.load_or_init_player()
+        self.assertEqual(loaded.name, "Corin")
+        self.assertEqual(loaded.pronouns, "he/him")
+        self.assertEqual(loaded.role, "Spellweaver")
+        self.assertEqual(loaded.hair_style, "Windswept Locks")
+        self.assertEqual(loaded.hair_color, "Silver")
+        self.assertEqual(loaded.outfit, "Celestial Silk Tunic")
+        self.assertEqual(loaded.magical_affinity, "Water")
+        self.assertEqual(loaded.companion, "Runestone Fox")
+        self.assertEqual(loaded.keepsake, "River Prism")
+
+        # Verify deterministic SVG generation reflects chosen attributes
+        svg = generate_protagonist_svg(
+            name=loaded.name,
+            role=loaded.role,
+            affinity=loaded.magical_affinity,
+            hair_style=loaded.hair_style,
+            hair_color=loaded.hair_color,
+            outfit=loaded.outfit,
+            companion=loaded.companion,
+            keepsake=loaded.keepsake
+        )
+        self.assertIn("Corin", svg)
+        self.assertIn("Spellweaver", svg)
+        self.assertIn("Water", svg)
+        self.assertTrue(svg.startswith("<svg"))
+        self.assertTrue(svg.endswith("</svg>"))
+
 if __name__ == "__main__":
     unittest.main()
