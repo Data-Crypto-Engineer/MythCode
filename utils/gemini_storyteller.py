@@ -46,11 +46,16 @@ class GeminiStoryteller:
 The player has just taken the following action: "{recent_action}".
 
 Player Context:
-- Name: {player_profile.get('name', 'Aria')}
+- Name: {player_profile.get('name', 'Aria')} ({player_profile.get('pronouns', 'they/them')})
 - Fantasy Calling: {player_profile.get('role', 'Rune Engineer')}
+- Appearance: {player_profile.get('appearance', 'Inquisitive scholar')}
+- Hair: {player_profile.get('hair_style', 'Braided crown')} in {player_profile.get('hair_color', 'Auburn')}
+- Attire: {player_profile.get('outfit', 'Leather scholar coat')}
+- Personality: {player_profile.get('personality', 'Curious & Patient')}
 - Magical Affinity: {player_profile.get('magical_affinity', 'Arcane')}
-- Companion: {player_profile.get('companion', 'Clockwork Owl')}
+- Companion Familiar: {player_profile.get('companion', 'Clockwork Owl')}
 - Keepsake: {player_profile.get('keepsake', 'Brass Chrono-Gear')}
+- Learning Approach: {player_profile.get('learning_style', 'Hands-on Experimentation')}
 
 World Context:
 - Location: {world_state.get('current_location', 'Whispering Village')}
