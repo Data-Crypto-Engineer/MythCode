@@ -994,7 +994,12 @@ else:
                 # Immediate descriptive feedback tailored to the choice
                 feedback_map = {
                     "examine_fountain": "You kneel beside the stone basin, tracing runic conduits leading toward the River Gorge.",
-                    "speak_mira": "You approach Mira's workbench. She looks up with hope in her eyes.",
+                    "speak_mira": "You approach Mira's workbench in her workshop.",
+                    "help_mira_prep": "You work alongside Mira at the workbench, calibrating the movement tolerances on her blueprints.",
+                    "confer_mira_grove": "Mira shares her insights on the mysterious conditional gate guarding the Ancient Grove.",
+                    "inspect_mira_inventions": "Mira proudly demonstrates her experimental clockwork prototypes powered by fresh spring water.",
+                    "thank_mira": "You and Mira share a celebratory moment beside the humming water conduits.",
+                    "bypass_mira": "You bypass the workshop and head directly down toward the river gorge.",
                     "ask_mira_clues": "Mira sketches the dais pattern in the stone dust: two paces forward, turn right, one step forward.",
                     "follow_aqueduct": "You take the river path downstream toward the roaring gorge and the seized waterwheel.",
                     "interact_sentinel": "You step onto the stone dais before the Clockwork Sentinel. Its rune sockets await your commands.",
