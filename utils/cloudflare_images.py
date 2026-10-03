@@ -1,6 +1,7 @@
 """
-Cloudflare Illustration Integration for MythCode (PART 5).
+Cloudflare Illustration Integration for MythCode (PART 5 & Requirement 8).
 Manages AI image generation, in-memory/disk caching, and rich SVG storybook fallbacks.
+Supports illustrations for: village, water spring, waterwheel/mechanism, important NPC (Mira), and major discovery.
 Never exposes credentials in frontend and operates with zero crash risk when offline.
 """
 import os
@@ -44,26 +45,42 @@ class CloudflareImageService:
 
     @property
     def is_available(self) -> bool:
-        return bool(self.account_id and self.api_token and self.api_token != "YOUR_API_TOKEN_HERE")
+        placeholders = {"YOUR_CLOUDFLARE_ACCOUNT_ID", "YOUR_CLOUDFLARE_API_TOKEN", "YOUR_API_TOKEN_HERE", ""}
+        return bool(self.account_id and self.api_token and self.api_token not in placeholders)
 
     def get_illustration(self, category: str, custom_prompt: Optional[str] = None) -> str:
         """
         Retrieves cached illustration or generates a new one.
         Returns data URL (base64 PNG or SVG).
         """
-        cache_key = f"{category}_{custom_prompt or 'default'}"
+        # Normalize category alias
+        normalized = category
+        if "village" in category.lower() and "restored" in category.lower():
+            normalized = "water_spring"
+        elif "mira" in category.lower():
+            normalized = "mira"
+        elif "aqueduct" in category.lower() or "waterwheel" in category.lower() or "sentinel" in category.lower() or "mechanism" in category.lower():
+            normalized = "River Aqueduct"
+        elif "grove" in category.lower() or "sylvan" in category.lower():
+            normalized = "Ancient Grove"
+        elif "ruins" in category.lower() or "conduit" in category.lower():
+            normalized = "Clockwork Ruins"
+        elif "discovery" in category.lower() or "solved" in category.lower() or "spring" in category.lower():
+            normalized = "water_spring"
+
+        cache_key = f"{normalized}_{custom_prompt or 'default'}"
         if cache_key in _IMAGE_CACHE:
             return _IMAGE_CACHE[cache_key]
 
         # If Cloudflare credentials are configured, attempt generation
         if self.is_available:
-            generated = self._generate_cloudflare_image(category, custom_prompt)
+            generated = self._generate_cloudflare_image(normalized, custom_prompt)
             if generated:
                 _IMAGE_CACHE[cache_key] = generated
                 return generated
 
         # Local storybook SVG fallback
-        svg = self._get_fallback_svg(category)
+        svg = self._get_fallback_svg(normalized)
         _IMAGE_CACHE[cache_key] = svg
         return svg
 
@@ -72,16 +89,17 @@ class CloudflareImageService:
         style_prompt = (
             "Fantasy storybook illustration, whimsical magical art, soft pastel color palette, "
             "parchment and warm cream tones, lavender and sage accents, gentle natural lighting, "
-            "friendly children's book aesthetic, masterpiece, high detail."
+            "friendly children's book aesthetic, masterpiece, high detail, no harsh dark colors."
         )
         base_prompts = {
             "world_intro": "Enchanted fantasy kingdom of Elarion with floating crystalline waterfalls and ancient runic stones.",
             "Whispering Village": "Quaint fantasy storybook village with cobblestone square, dried stone fountain, timber workshops, and flower gardens.",
+            "mira": "Friendly young female fantasy clockwork inventor wearing brass goggles and a leather apron, holding blueprints and small bronze gears.",
             "River Aqueduct": "Massive ancient stone and bronze waterwheel aqueduct spanning a rocky river bed with a resting clockwork sentinel.",
+            "water_spring": "Celebration in a fantasy village square with crystal-clear water gushing into an ornate carved fountain, joyful villagers.",
             "Ancient Grove": "Ethereal mystical forest clearing with giant weeping willow trees, glowing bioluminescent emerald moss, and an ancient runic archway.",
             "Clockwork Ruins": "Subterranean ancient hall with gleaming brass gears, five glowing runic floor conduits, and crystal conduits.",
-            "character_portrait": "Expressive young fantasy adventurer scholar with curiosity in their eyes, magical runes glowing on their clothing, companion animal resting on shoulder.",
-            "puzzle_solved": "Magical burst of glowing pastel light, ancient gears spinning smoothly, clear sparkling water flowing joyously into crystalline fountains."
+            "character_portrait": "Expressive young fantasy adventurer scholar with curiosity in their eyes, magical runes glowing on their clothing, companion animal resting on shoulder."
         }
 
         prompt = f"{custom_prompt or base_prompts.get(category, base_prompts['world_intro'])}, {style_prompt}"
@@ -116,7 +134,8 @@ class CloudflareImageService:
             "sage": "#C9D8C1",
             "gold": "#D7B978",
             "peach": "#F2CDBD",
-            "ink": "#453D4C"
+            "ink": "#453D4C",
+            "water_blue": "#7BB5C9"
         }
 
         if category == "River Aqueduct":
@@ -132,17 +151,69 @@ class CloudflareImageService:
                 <rect width="600" height="240" rx="16" fill="url(#skyGrad)" />
                 <path d="M0,180 Q150,160 300,185 T600,175 L600,240 L0,240 Z" fill="{svg_palette['sage']}" opacity="0.8" />
                 <!-- Aqueduct Arch -->
-                <rect x="180" y="80" width="240" height="20" rx="4" fill="{svg_palette['gold']}" />
-                <path d="M220,100 A40,40 0 0,0 300,100 V180 H220 Z" fill="{svg_palette['bg_parchment']}" stroke="{svg_palette['gold']}" stroke-width="3" />
-                <path d="M300,100 A40,40 0 0,0 380,100 V180 H300 Z" fill="{svg_palette['bg_parchment']}" stroke="{svg_palette['gold']}" stroke-width="3" />
+                <rect x="160" y="80" width="280" height="20" rx="4" fill="{svg_palette['gold']}" />
+                <path d="M200,100 A40,40 0 0,0 280,100 V180 H200 Z" fill="{svg_palette['bg_parchment']}" stroke="{svg_palette['gold']}" stroke-width="3" />
+                <path d="M280,100 A40,40 0 0,0 360,100 V180 H280 Z" fill="{svg_palette['bg_parchment']}" stroke="{svg_palette['gold']}" stroke-width="3" />
                 <!-- Gear wheel -->
-                <circle cx="200" cy="140" r="30" fill="none" stroke="{svg_palette['gold']}" stroke-width="8" stroke-dasharray="8,6" />
-                <circle cx="200" cy="140" r="12" fill="{svg_palette['peach']}" stroke="{svg_palette['gold']}" stroke-width="3" />
-                <!-- Clockwork Guardian silhouette -->
-                <rect x="420" y="130" width="30" height="45" rx="6" fill="{svg_palette['ink']}" opacity="0.85" />
-                <circle cx="435" cy="118" r="14" fill="{svg_palette['ink']}" opacity="0.85" />
-                <circle cx="435" cy="118" r="4" fill="{svg_palette['gold']}" />
-                <text x="300" y="220" text-anchor="middle" font-family="serif" font-size="14" font-weight="bold" fill="{svg_palette['ink']}">RIVER AQUEDUCT & CLOCKWORK SENTINEL</text>
+                <circle cx="180" cy="140" r="32" fill="none" stroke="{svg_palette['gold']}" stroke-width="8" stroke-dasharray="8,6" />
+                <circle cx="180" cy="140" r="14" fill="{svg_palette['peach']}" stroke="{svg_palette['gold']}" stroke-width="3" />
+                <!-- Clockwork Sentinel silhouette on stone dais -->
+                <rect x="400" y="150" width="80" height="15" rx="3" fill="{svg_palette['sage']}" stroke="{svg_palette['ink']}" stroke-width="2" />
+                <rect x="425" y="115" width="28" height="38" rx="6" fill="{svg_palette['ink']}" opacity="0.85" />
+                <circle cx="439" cy="104" r="12" fill="{svg_palette['ink']}" opacity="0.85" />
+                <circle cx="439" cy="104" r="4" fill="{svg_palette['gold']}" />
+                <!-- Text banner -->
+                <text x="300" y="220" text-anchor="middle" font-family="serif" font-size="13" font-weight="bold" fill="{svg_palette['ink']}">THE RIVER GORGE & SEIZED WATERWHEEL SENTINEL</text>
+            </svg>
+            """
+        elif category == "water_spring":
+            svg_content = f"""
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 240" width="100%" height="100%">
+                <defs>
+                    <linearGradient id="springGrad" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0%" stop-color="{svg_palette['water_blue']}" />
+                        <stop offset="60%" stop-color="{svg_palette['bg_parchment']}" />
+                        <stop offset="100%" stop-color="{svg_palette['sage']}" />
+                    </linearGradient>
+                </defs>
+                <rect width="600" height="240" rx="16" fill="url(#springGrad)" />
+                <!-- Flowing Water Cascades -->
+                <path d="M0,170 Q150,150 300,175 T600,165 L600,240 L0,240 Z" fill="{svg_palette['water_blue']}" opacity="0.5" />
+                <!-- Overflowing Village Fountain -->
+                <ellipse cx="300" cy="180" rx="90" ry="24" fill="{svg_palette['water_blue']}" stroke="{svg_palette['gold']}" stroke-width="3" />
+                <ellipse cx="300" cy="155" rx="55" ry="16" fill="{svg_palette['water_blue']}" stroke="{svg_palette['gold']}" stroke-width="3" />
+                <!-- Sparkling water jets -->
+                <path d="M300,155 Q290,110 270,130" stroke="#FFFFFF" stroke-width="3" fill="none" />
+                <path d="M300,155 Q310,110 330,130" stroke="#FFFFFF" stroke-width="3" fill="none" />
+                <circle cx="300" cy="115" r="5" fill="{svg_palette['gold']}" />
+                <circle cx="280" cy="125" r="3" fill="#FFFFFF" />
+                <circle cx="320" cy="125" r="3" fill="#FFFFFF" />
+                <text x="300" y="225" text-anchor="middle" font-family="serif" font-size="13" font-weight="bold" fill="{svg_palette['ink']}">THE SACRED SPRINGS OF ELARION RESTORED</text>
+            </svg>
+            """
+        elif category == "mira":
+            svg_content = f"""
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 240" width="100%" height="100%">
+                <defs>
+                    <linearGradient id="miraGrad" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0%" stop-color="{svg_palette['peach']}" />
+                        <stop offset="70%" stop-color="{svg_palette['bg_parchment']}" />
+                        <stop offset="100%" stop-color="{svg_palette['gold']}" />
+                    </linearGradient>
+                </defs>
+                <rect width="600" height="240" rx="16" fill="url(#miraGrad)" />
+                <!-- Workshop Workbench -->
+                <rect x="120" y="160" width="360" height="40" rx="4" fill="{svg_palette['gold']}" stroke="{svg_palette['ink']}" stroke-width="2" />
+                <!-- Gear blueprints on table -->
+                <rect x="220" y="150" width="80" height="20" rx="2" fill="#FFFFFF" stroke="{svg_palette['ink']}" stroke-width="1.5" />
+                <circle cx="260" cy="160" r="6" fill="none" stroke="{svg_palette['ink']}" stroke-width="1.5" />
+                <!-- Mira Silhouette with goggles -->
+                <circle cx="300" cy="100" r="26" fill="{svg_palette['peach']}" stroke="{svg_palette['ink']}" stroke-width="2" />
+                <!-- Brass Goggles on forehead -->
+                <circle cx="292" cy="94" r="8" fill="{svg_palette['gold']}" stroke="{svg_palette['ink']}" stroke-width="2" />
+                <circle cx="308" cy="94" r="8" fill="{svg_palette['gold']}" stroke="{svg_palette['ink']}" stroke-width="2" />
+                <path d="M260,160 C270,125 330,125 340,160 Z" fill="{svg_palette['sage']}" stroke="{svg_palette['ink']}" stroke-width="2" />
+                <text x="300" y="225" text-anchor="middle" font-family="serif" font-size="13" font-weight="bold" fill="{svg_palette['ink']}">MIRA'S CLOCKWORK WORKSHOP</text>
             </svg>
             """
         elif category == "Ancient Grove":
@@ -162,11 +233,7 @@ class CloudflareImageService:
                 <!-- Glowing Runic Arch -->
                 <path d="M250,200 V100 A50,50 0 0,1 350,100 V200 Z" fill="none" stroke="{svg_palette['sage']}" stroke-width="12" />
                 <circle cx="300" cy="90" r="18" fill="{svg_palette['peach']}" stroke="{svg_palette['gold']}" stroke-width="4" />
-                <!-- Runic glyph sparkles -->
-                <circle cx="280" cy="130" r="3" fill="{svg_palette['gold']}" />
-                <circle cx="320" cy="130" r="3" fill="{svg_palette['gold']}" />
-                <circle cx="300" cy="150" r="4" fill="{svg_palette['lavender']}" />
-                <text x="300" y="225" text-anchor="middle" font-family="serif" font-size="14" font-weight="bold" fill="{svg_palette['ink']}">ANCIENT GROVE OF SYLVAN</text>
+                <text x="300" y="225" text-anchor="middle" font-family="serif" font-size="13" font-weight="bold" fill="{svg_palette['ink']}">ANCIENT GROVE OF SYLVAN</text>
             </svg>
             """
         elif category == "Clockwork Ruins":
@@ -188,8 +255,7 @@ class CloudflareImageService:
                     <rect x="195" y="0" width="50" height="35" rx="6" fill="{svg_palette['bg_parchment']}" stroke="{svg_palette['gold']}" stroke-width="3" />
                     <rect x="260" y="0" width="50" height="35" rx="6" fill="{svg_palette['bg_parchment']}" stroke="{svg_palette['gold']}" stroke-width="3" />
                 </g>
-                <path d="M100,128 H140 M190,128 H205 M255,128 H270 M320,128 H335 M385,128 H400 M450,128 H490" stroke="{svg_palette['peach']}" stroke-width="4" stroke-dasharray="4,4" />
-                <text x="300" y="210" text-anchor="middle" font-family="serif" font-size="14" font-weight="bold" fill="{svg_palette['ink']}">SUBTERRANEAN RESONANCE TILES</text>
+                <text x="300" y="210" text-anchor="middle" font-family="serif" font-size="13" font-weight="bold" fill="{svg_palette['ink']}">SUBTERRANEAN RESONANCE CONDUITS</text>
             </svg>
             """
         else:  # Whispering Village or default
@@ -203,16 +269,16 @@ class CloudflareImageService:
                     </linearGradient>
                 </defs>
                 <rect width="600" height="240" rx="16" fill="url(#villageGrad)" />
-                <!-- Cottage Roofs -->
+                <!-- Cottages -->
                 <polygon points="60,140 120,90 180,140" fill="{svg_palette['gold']}" />
                 <rect x="80" y="140" width="80" height="60" fill="{svg_palette['bg_parchment']}" stroke="{svg_palette['ink']}" stroke-width="2" />
                 <polygon points="420,130 480,80 540,130" fill="{svg_palette['gold']}" />
                 <rect x="440" y="130" width="80" height="70" fill="{svg_palette['bg_parchment']}" stroke="{svg_palette['ink']}" stroke-width="2" />
-                <!-- Village Fountain -->
+                <!-- Dried Village Fountain -->
                 <ellipse cx="300" cy="180" rx="60" ry="20" fill="{svg_palette['lavender']}" stroke="{svg_palette['gold']}" stroke-width="3" />
                 <path d="M295,180 V140 H305 V180 Z" fill="{svg_palette['gold']}" />
                 <circle cx="300" cy="135" r="8" fill="{svg_palette['peach']}" />
-                <text x="300" y="225" text-anchor="middle" font-family="serif" font-size="14" font-weight="bold" fill="{svg_palette['ink']}">WHISPERING VILLAGE & DRIED SPRINGS</text>
+                <text x="300" y="225" text-anchor="middle" font-family="serif" font-size="13" font-weight="bold" fill="{svg_palette['ink']}">WHISPERING VILLAGE & SILENT SPRINGS</text>
             </svg>
             """
 
