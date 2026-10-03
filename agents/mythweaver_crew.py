@@ -56,7 +56,8 @@ class MythWeaverCrew:
         action_text: str,
         action_type: str = "exploration",
         puzzle_submission: Optional[Any] = None,
-        puzzle_id: Optional[str] = None
+        puzzle_id: Optional[str] = None,
+        action_id: Optional[str] = None
     ) -> Dict[str, Any]:
         """
         Coordinates full multi-agent gameplay cycle:
@@ -89,7 +90,8 @@ class MythWeaverCrew:
                 world_state=world_state.to_dict(),
                 player_profile=player_profile.to_dict(),
                 quest_state={},
-                learning_progress=learning_progress.to_dict()
+                learning_progress=learning_progress.to_dict(),
+                action_id=action_id
             )
             telemetry.append({
                 "agent": "DirectorAgent",
